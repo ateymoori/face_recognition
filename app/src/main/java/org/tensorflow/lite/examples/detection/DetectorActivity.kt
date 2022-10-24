@@ -46,6 +46,8 @@ import android.os.SystemClock
 import android.util.Size
 import android.view.View
 import android.widget.ImageView
+import androidx.appcompat.widget.AppCompatImageView
+import androidx.core.widget.ImageViewCompat
 import com.google.mlkit.vision.face.Face
 import com.google.mlkit.vision.face.FaceDetector
 import org.tensorflow.lite.examples.detection.env.ImageUtils
@@ -86,10 +88,16 @@ class DetectorActivity : CameraActivity(), OnImageAvailableListener {
     // here the face is cropped and drawn
     private var faceBmp: Bitmap? = null
 
+    private var detectedFaceVU: AppCompatImageView? = null
+    private var dataVU: TextView? = null
+
     //private HashMap<String, Classifier.Recognition> knownFaces = new HashMap<>();
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         findViewById<View>(R.id.fab_add).setOnClickListener(View.OnClickListener { onAddClick() })
+        detectedFaceVU = findViewById<View>(R.id.detectedFaceVU)  as AppCompatImageView
+        dataVU = findViewById<View>(R.id.dataVU)  as TextView
+
 
         // Real-time contour detection of multiple faces
         val options = FaceDetectorOptions.Builder()
@@ -314,7 +322,7 @@ class DetectorActivity : CameraActivity(), OnImageAvailableListener {
 
     private fun onFacesDetected(currTimestamp: Long, faces: List<Face>, add: Boolean) {
         cropCopyBitmap = Bitmap.createBitmap(croppedBitmap!!)
-       // val canvas = Canvas(cropCopyBitmap)
+        // val canvas = Canvas(cropCopyBitmap)
         val paint = Paint()
         paint.color = Color.RED
         paint.style = Paint.Style.STROKE
@@ -401,6 +409,8 @@ class DetectorActivity : CameraActivity(), OnImageAvailableListener {
                     if (conf < 1.0f) {
                         confidence = conf
                         label = result.title ?: "titlee"
+
+
                         color = if (result.id == "0") {
                             Color.GREEN
                         } else {
@@ -429,6 +439,22 @@ class DetectorActivity : CameraActivity(), OnImageAvailableListener {
                 result.extra = extra
                 result.crop = crop
                 mappedRecognitions.add(result)
+
+
+//                mappedRecognitions.forEach {
+//                    it.
+//                    it.toString().log("extra__")
+//                }
+                runOnUiThread {
+                    detectedFaceVU?.setImageBitmap(faceBmp)
+                    dataVU?.text = label
+
+                //    face.smilingProbability
+              //      result.id.toString().toString().log("extra__")
+
+                }
+
+
             }
         }
 
@@ -457,7 +483,7 @@ class DetectorActivity : CameraActivity(), OnImageAvailableListener {
         private const val MINIMUM_CONFIDENCE_TF_OD_API = 0.5f
         private const val MAINTAIN_ASPECT = false
         protected val desiredPreviewFrameSize = Size(640, 480)
-         //   protected get() = {  }
+        //   protected get() = {  }
 
         //private static final int CROP_SIZE = 320;
         //private static final Size CROP_SIZE = new Size(320, 320);

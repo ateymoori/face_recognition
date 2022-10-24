@@ -69,7 +69,7 @@ abstract class CameraActivity : AppCompatActivity(), OnImageAvailableListener, P
     private var imageConverter: Runnable? = null
     private var bottomSheetLayout: LinearLayout? = null
     private var gestureLayout: LinearLayout? = null
-    private var sheetBehavior: BottomSheetBehavior<LinearLayout?>? = null
+  //  private var sheetBehavior: BottomSheetBehavior<LinearLayout?>? = null
     protected var frameValueTextView: TextView? = null
     protected var cropValueTextView: TextView? = null
     protected var inferenceTimeTextView: TextView? = null
@@ -104,7 +104,7 @@ abstract class CameraActivity : AppCompatActivity(), OnImageAvailableListener, P
         apiSwitchCompat = findViewById(R.id.api_info_switch)
         bottomSheetLayout = findViewById(R.id.bottom_sheet_layout)
         gestureLayout = findViewById(R.id.gesture_layout)
-        sheetBehavior = BottomSheetBehavior.from(bottomSheetLayout)
+//        sheetBehavior = BottomSheetBehavior.from(bottomSheetLayout!!)
         bottomSheetArrowImageView = findViewById(R.id.bottom_sheet_arrow)
         btnSwitchCam = findViewById(R.id.fab_switchcam)
         val vto = gestureLayout?.getViewTreeObserver()
@@ -114,28 +114,28 @@ abstract class CameraActivity : AppCompatActivity(), OnImageAvailableListener, P
                     gestureLayout?.getViewTreeObserver()?.removeOnGlobalLayoutListener(this)
                     //                int width = bottomSheetLayout.getMeasuredWidth();
                     val height = gestureLayout?.getMeasuredHeight()
-                    sheetBehavior?.setPeekHeight(height?:0)
+                 //   sheetBehavior?.setPeekHeight(height?:0)
                 }
             })
-        sheetBehavior?.setHideable(false)
-        sheetBehavior?.setBottomSheetCallback(
-            object : BottomSheetCallback() {
-                override fun onStateChanged(bottomSheet: View, newState: Int) {
-                    when (newState) {
-                        BottomSheetBehavior.STATE_HIDDEN -> {}
-                        BottomSheetBehavior.STATE_EXPANDED -> {
-                            bottomSheetArrowImageView?.setImageResource(R.drawable.icn_chevron_down)
-                        }
-                        BottomSheetBehavior.STATE_COLLAPSED -> {
-                            bottomSheetArrowImageView?.setImageResource(R.drawable.icn_chevron_up)
-                        }
-                        BottomSheetBehavior.STATE_DRAGGING -> {}
-                        BottomSheetBehavior.STATE_SETTLING -> bottomSheetArrowImageView?.setImageResource(R.drawable.icn_chevron_up)
-                    }
-                }
-
-                override fun onSlide(bottomSheet: View, slideOffset: Float) {}
-            })
+//        sheetBehavior?.setHideable(false)
+//        sheetBehavior?.setBottomSheetCallback(
+//            object : BottomSheetCallback() {
+//                override fun onStateChanged(bottomSheet: View, newState: Int) {
+//                    when (newState) {
+//                        BottomSheetBehavior.STATE_HIDDEN -> {}
+//                        BottomSheetBehavior.STATE_EXPANDED -> {
+//                            bottomSheetArrowImageView?.setImageResource(R.drawable.icn_chevron_down)
+//                        }
+//                        BottomSheetBehavior.STATE_COLLAPSED -> {
+//                            bottomSheetArrowImageView?.setImageResource(R.drawable.icn_chevron_up)
+//                        }
+//                        BottomSheetBehavior.STATE_DRAGGING -> {}
+//                        BottomSheetBehavior.STATE_SETTLING -> bottomSheetArrowImageView?.setImageResource(R.drawable.icn_chevron_up)
+//                    }
+//                }
+//
+//                override fun onSlide(bottomSheet: View, slideOffset: Float) {}
+//            })
         frameValueTextView = findViewById(R.id.frame_info)
         cropValueTextView = findViewById(R.id.crop_info)
         inferenceTimeTextView = findViewById(R.id.inference_info)

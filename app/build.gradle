@@ -43,16 +43,15 @@ project.ext.TMP_DIR   = project.buildDir.toString() + '/downloads'
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.7.10"
     implementation fileTree(dir: 'libs', include: ['*.jar','*.aar'])
-    implementation 'androidx.appcompat:appcompat:1.0.0'
-    implementation 'androidx.coordinatorlayout:coordinatorlayout:1.0.0'
-    implementation 'com.google.android.material:material:1.0.0'
+    implementation 'androidx.appcompat:appcompat:1.5.1'
+    implementation "androidx.constraintlayout:constraintlayout:2.1.4"
+    implementation 'androidx.coordinatorlayout:coordinatorlayout:1.2.0'
+    implementation 'com.google.android.material:material:1.6.1'
     implementation('org.tensorflow:tensorflow-lite:0.0.0-nightly') { changing = true }
-    implementation 'androidx.core:core-ktx:+'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
-    androidTestImplementation 'com.android.support.test:rules:1.0.2'
+    implementation 'androidx.core:core-ktx:1.9.0'
     androidTestImplementation 'com.google.truth:truth:1.0.1'
 
     // added MLKit dependencies for face detector
-    implementation 'com.google.mlkit:face-detection:16.0.0'
+    implementation 'com.google.mlkit:face-detection:16.1.5'
 
 }
