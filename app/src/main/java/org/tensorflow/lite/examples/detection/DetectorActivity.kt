@@ -294,6 +294,7 @@ class DetectorActivity : CameraActivity(), OnImageAvailableListener {
                 return@OnClickListener
             }
             detector!!.register(name, rec)
+            "${name} ----- ${rec.toString()} logggg".log("tag__")
             //knownFaces.put(name, rec);
             dlg.dismiss()
         })
