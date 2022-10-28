@@ -54,4 +54,7 @@ dependencies {
     // added MLKit dependencies for face detector
     implementation 'com.google.mlkit:face-detection:16.1.5'
 
+    implementation "com.orhanobut:hawk:2.0.1"
+
+
 }

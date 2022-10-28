@@ -25,8 +25,10 @@ import android.content.res.AssetManager
 import android.content.res.AssetFileDescriptor
 import android.util.Log
 import android.util.Pair
+import com.orhanobut.hawk.Hawk
 import org.tensorflow.lite.Interpreter
 import org.tensorflow.lite.examples.detection.env.Logger
+import org.tensorflow.lite.examples.detection.log
 import java.io.BufferedReader
 import java.io.FileInputStream
 import java.io.IOException
@@ -38,6 +40,7 @@ import java.nio.ByteOrder
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
 import java.util.*
+import kotlin.collections.ArrayList
 
 /**
  * Wrapper for frozen detection models trained using the Tensorflow Object Detection API:
@@ -61,28 +64,50 @@ class TFLiteObjectDetectionAPIModel private constructor() : SimilarityClassifier
 
     // outputLocations: array of shape [Batchsize, NUM_DETECTIONS,4]
     // contains the location of detected boxes
-    private lateinit  var outputLocations: Array<Array<FloatArray>>
+    private lateinit var outputLocations: Array<Array<FloatArray>>
 
     // outputClasses: array of shape [Batchsize, NUM_DETECTIONS]
     // contains the classes of detected boxes
-    private lateinit  var outputClasses: Array<FloatArray>
+    private lateinit var outputClasses: Array<FloatArray>
 
     // outputScores: array of shape [Batchsize, NUM_DETECTIONS]
     // contains the scores of detected boxes
-    private lateinit  var outputScores: Array<FloatArray>
+    private lateinit var outputScores: Array<FloatArray>
 
     // numDetections: array of shape [Batchsize]
     // contains the number of detected boxes
-    private lateinit  var numDetections: FloatArray
-    private lateinit  var embeedings: Array<FloatArray>
+    private lateinit var numDetections: FloatArray
+    private lateinit var embeedings: Array<FloatArray>
     private var imgData: ByteBuffer? = null
     private var tfLite: Interpreter? = null
 
     // Face Mask Detector Output
-    private lateinit  var output: Array<FloatArray>
+    private lateinit var output: Array<FloatArray>
     private val registered = HashMap<String?, Recognition?>()
     override fun register(name: String?, rec: Recognition?) {
         registered[name] = rec
+        saveData()
+    }
+
+    init {
+        val original = registered
+        val data = Hawk.get<HashMap<String?, Recognition?>>("data")
+        data?.let {
+            it.forEach {
+                val newData = it.value
+                val extras = ((newData?.extra as ArrayList<Any?>?)?.get(0)) as ArrayList<Double>
+                val floatArrays: FloatArray = FloatArray(extras.size) {
+                    extras[it].toFloat()
+                }
+                val array = Array<FloatArray>(1, { floatArrays })
+                it.value?.extra = array
+                registered[it.key] = it.value
+            }
+        }
+    }
+
+    fun saveData() {
+        Hawk.put("data", registered)
     }
 
     // looks for the nearest embeeding in the dataset (using L2 norm)
@@ -91,14 +116,9 @@ class TFLiteObjectDetectionAPIModel private constructor() : SimilarityClassifier
         var ret: Pair<String?, Float>? = null
         for ((name, value) in registered) {
             val knownEmb = (value!!.extra as Array<FloatArray>?)!![0]
-            //            Log.d("tag__", knownEmb.length + "");
-            Log.d(
-                "tag__",
-                knownEmb[0].toString() + " _ " + knownEmb[1] + " _ " + knownEmb[2] + " _ " + knownEmb[3] + " _ "
-            )
             var distance = 0f
             for (i in emb.indices) {
-                val diff = emb[i] - knownEmb[i]
+                val diff = (emb[i] - knownEmb[i])
                 distance += diff * diff
             }
             distance = Math.sqrt(distance.toDouble()).toFloat()
@@ -249,7 +269,7 @@ class TFLiteObjectDetectionAPIModel private constructor() : SimilarityClassifier
             val actualFilename = labelFilename.split("file:///android_asset/").toTypedArray()[1]
             val labelsInput = assetManager.open(actualFilename)
             val br = BufferedReader(InputStreamReader(labelsInput))
-            var line: String=""
+            var line: String = ""
             while (br.readLine()?.also { line = it } != null) {
                 LOGGER.w(line)
                 d.labels.add(line)
