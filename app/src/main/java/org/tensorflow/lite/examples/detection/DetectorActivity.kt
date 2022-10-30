@@ -314,11 +314,6 @@ class DetectorActivity : CameraActivity(), OnImageAvailableListener {
                 showAddFaceDialog(rec)
             }
         }
-        runOnUiThread {
-            showFrameInfo(previewWidth.toString() + "x" + previewHeight)
-            showCropInfo(croppedBitmap!!.width.toString() + "x" + croppedBitmap!!.height)
-            showInference(lastProcessingTimeMs.toString() + "ms")
-        }
     }
 
     private fun onFacesDetected(currTimestamp: Long, faces: List<Face>, add: Boolean) {

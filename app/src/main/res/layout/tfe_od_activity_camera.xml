@@ -40,11 +40,6 @@
 
     </RelativeLayout>
 
-        <include
-            android:id="@+id/bottom_sheet_layout"
-            layout="@layout/tfe_od_layout_bottom_sheet"
-            android:visibility="gone" />
-
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -107,7 +102,6 @@
             android:layout_margin="16dp"
             android:src="@android:drawable/ic_search_category_default"
             android:tint="@android:color/white"
-            app:layout_anchor="@id/bottom_sheet_layout"
             app:layout_anchorGravity="top|end" />
     </LinearLayout>
 

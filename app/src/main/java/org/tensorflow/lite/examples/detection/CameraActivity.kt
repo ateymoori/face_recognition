@@ -17,43 +17,35 @@ package org.tensorflow.lite.examples.detection
 
 import android.Manifest
 import android.app.Fragment
-import androidx.appcompat.app.AppCompatActivity
-import android.media.ImageReader.OnImageAvailableListener
-import android.hardware.Camera.PreviewCallback
-import com.google.android.material.bottomsheet.BottomSheetBehavior
-import androidx.appcompat.widget.SwitchCompat
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import org.tensorflow.lite.examples.detection.CameraActivity
 import android.content.Intent
-import android.hardware.camera2.CameraCharacteristics
-import android.view.WindowManager
-import org.tensorflow.lite.examples.detection.R
-import android.view.ViewTreeObserver
-import android.view.ViewTreeObserver.OnGlobalLayoutListener
-import com.google.android.material.bottomsheet.BottomSheetBehavior.BottomSheetCallback
-import android.media.Image.Plane
 import android.content.pm.PackageManager
 import android.hardware.Camera
-import android.hardware.camera2.CameraManager
-import android.hardware.camera2.params.StreamConfigurationMap
+import android.hardware.Camera.PreviewCallback
 import android.hardware.camera2.CameraAccessException
+import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraManager
+import android.media.Image.Plane
 import android.media.ImageReader
+import android.media.ImageReader.OnImageAvailableListener
 import android.os.*
 import android.util.Size
 import android.view.Surface
 import android.view.View
+import android.view.WindowManager
 import android.widget.*
-import androidx.appcompat.widget.Toolbar
-import org.tensorflow.lite.examples.detection.CameraConnectionFragment
-import org.tensorflow.lite.examples.detection.LegacyCameraConnectionFragment
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SwitchCompat
+import org.tensorflow.lite.examples.detection.databinding.TfeOdActivityCameraBinding
 import org.tensorflow.lite.examples.detection.env.ImageUtils
 import org.tensorflow.lite.examples.detection.env.Logger
-import java.lang.Exception
 
 abstract class CameraActivity : AppCompatActivity(), OnImageAvailableListener, PreviewCallback,
     CompoundButton.OnCheckedChangeListener, View.OnClickListener {
+    lateinit var views: TfeOdActivityCameraBinding
+
     @JvmField
     protected var previewWidth = 0
+
     @JvmField
     protected var previewHeight = 0
     val isDebug = false
@@ -64,33 +56,22 @@ abstract class CameraActivity : AppCompatActivity(), OnImageAvailableListener, P
     private val yuvBytes = arrayOfNulls<ByteArray>(3)
     private var rgbBytes: IntArray? = null
     protected var luminanceStride = 0
-        private set
     private var postInferenceCallback: Runnable? = null
     private var imageConverter: Runnable? = null
-    private var bottomSheetLayout: LinearLayout? = null
-    private var gestureLayout: LinearLayout? = null
-  //  private var sheetBehavior: BottomSheetBehavior<LinearLayout?>? = null
-    protected var frameValueTextView: TextView? = null
-    protected var cropValueTextView: TextView? = null
-    protected var inferenceTimeTextView: TextView? = null
-    protected var bottomSheetArrowImageView: ImageView? = null
-    private var plusImageView: ImageView? = null
-    private var minusImageView: ImageView? = null
     private var apiSwitchCompat: SwitchCompat? = null
     private var threadsTextView: TextView? = null
-    private var btnSwitchCam: FloatingActionButton? = null
     protected var cameraFacing: Int? = null
-        private set
     private var cameraId: String? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
-        LOGGER.d("onCreate $this")
         super.onCreate(null)
         val intent = intent
         //useFacing = intent.getIntExtra(KEY_USE_FACING, CameraCharacteristics.LENS_FACING_FRONT);
         cameraFacing = intent.getIntExtra(KEY_USE_FACING, CameraCharacteristics.LENS_FACING_BACK)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        setContentView(R.layout.tfe_od_activity_camera)
-        val toolbar = findViewById<Toolbar>(R.id.toolbar)
+        views = TfeOdActivityCameraBinding.inflate(layoutInflater)
+        setContentView(views.root)
+        val toolbar = views.toolbar
         setSupportActionBar(toolbar)
         supportActionBar!!.setDisplayShowTitleEnabled(false)
         if (hasPermission()) {
@@ -98,51 +79,7 @@ abstract class CameraActivity : AppCompatActivity(), OnImageAvailableListener, P
         } else {
             requestPermission()
         }
-        threadsTextView = findViewById(R.id.threads)
-        plusImageView = findViewById(R.id.plus)
-        minusImageView = findViewById(R.id.minus)
-        apiSwitchCompat = findViewById(R.id.api_info_switch)
-        bottomSheetLayout = findViewById(R.id.bottom_sheet_layout)
-        gestureLayout = findViewById(R.id.gesture_layout)
-//        sheetBehavior = BottomSheetBehavior.from(bottomSheetLayout!!)
-        bottomSheetArrowImageView = findViewById(R.id.bottom_sheet_arrow)
-        btnSwitchCam = findViewById(R.id.fab_switchcam)
-        val vto = gestureLayout?.getViewTreeObserver()
-        vto?.addOnGlobalLayoutListener(
-            object : OnGlobalLayoutListener {
-                override fun onGlobalLayout() {
-                    gestureLayout?.getViewTreeObserver()?.removeOnGlobalLayoutListener(this)
-                    //                int width = bottomSheetLayout.getMeasuredWidth();
-                    val height = gestureLayout?.getMeasuredHeight()
-                 //   sheetBehavior?.setPeekHeight(height?:0)
-                }
-            })
-//        sheetBehavior?.setHideable(false)
-//        sheetBehavior?.setBottomSheetCallback(
-//            object : BottomSheetCallback() {
-//                override fun onStateChanged(bottomSheet: View, newState: Int) {
-//                    when (newState) {
-//                        BottomSheetBehavior.STATE_HIDDEN -> {}
-//                        BottomSheetBehavior.STATE_EXPANDED -> {
-//                            bottomSheetArrowImageView?.setImageResource(R.drawable.icn_chevron_down)
-//                        }
-//                        BottomSheetBehavior.STATE_COLLAPSED -> {
-//                            bottomSheetArrowImageView?.setImageResource(R.drawable.icn_chevron_up)
-//                        }
-//                        BottomSheetBehavior.STATE_DRAGGING -> {}
-//                        BottomSheetBehavior.STATE_SETTLING -> bottomSheetArrowImageView?.setImageResource(R.drawable.icn_chevron_up)
-//                    }
-//                }
-//
-//                override fun onSlide(bottomSheet: View, slideOffset: Float) {}
-//            })
-        frameValueTextView = findViewById(R.id.frame_info)
-        cropValueTextView = findViewById(R.id.crop_info)
-        inferenceTimeTextView = findViewById(R.id.inference_info)
-        apiSwitchCompat?.setOnCheckedChangeListener(this)
-        plusImageView?.setOnClickListener(this)
-        minusImageView?.setOnClickListener(this)
-        btnSwitchCam?.setOnClickListener(View.OnClickListener { onSwitchCamClick() })
+        views.fabSwitchcam.setOnClickListener { onSwitchCamClick() }
     }
 
     private fun onSwitchCamClick() {
@@ -447,35 +384,7 @@ abstract class CameraActivity : AppCompatActivity(), OnImageAvailableListener, P
     }
 
     override fun onClick(v: View) {
-        if (v.id == R.id.plus) {
-            val threads = threadsTextView!!.text.toString().trim { it <= ' ' }
-            var numThreads = threads.toInt()
-            if (numThreads >= 9) return
-            numThreads++
-            threadsTextView!!.text = numThreads.toString()
-            setNumThreads(numThreads)
-        } else if (v.id == R.id.minus) {
-            val threads = threadsTextView!!.text.toString().trim { it <= ' ' }
-            var numThreads = threads.toInt()
-            if (numThreads == 1) {
-                return
-            }
-            numThreads--
-            threadsTextView!!.text = numThreads.toString()
-            setNumThreads(numThreads)
-        }
-    }
 
-    protected fun showFrameInfo(frameInfo: String?) {
-        frameValueTextView!!.text = frameInfo
-    }
-
-    protected fun showCropInfo(cropInfo: String?) {
-        cropValueTextView!!.text = cropInfo
-    }
-
-    protected fun showInference(inferenceTime: String?) {
-        inferenceTimeTextView!!.text = inferenceTime
     }
 
     protected abstract fun processImage()
