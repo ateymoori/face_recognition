@@ -1,4 +1,4 @@
-package org.tensorflow.lite.examples.detection.voice
+package org.tensorflow.lite.examples.detection.clean.presentation.voice
 
 import android.Manifest
 import android.content.Context
@@ -6,7 +6,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.AudioManager
 import android.os.Bundle
-import android.os.Handler
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
@@ -15,7 +14,6 @@ import android.speech.tts.UtteranceProgressListener
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import kotlinx.coroutines.delay
 import org.tensorflow.lite.examples.detection.databinding.ActivityVoiceBinding
 import org.tensorflow.lite.examples.detection.log
 import java.util.*
@@ -146,17 +144,17 @@ class VoiceActivity : AppCompatActivity(), RecognitionListener {
 
         if (text.isEmpty()) return
 
-        if (text.toLowerCase().contains("hey kitty")) {
+        if (text.lowercase().contains("hey kitty")) {
             lastDetectedVoice = ""
             userWantsToAskSomething = true
             speak("Hey Amir, What can I do for you?")
 
         } else {
             //handle the question/order
-            "lastPlayedSound : ${lastPlayedSound?.toLowerCase()}".log("monitor_")
-            "lastDetectedVoice : ${lastDetectedVoice?.toLowerCase()}".log("monitor_")
-            if (userWantsToAskSomething && (lastPlayedSound?.toLowerCase()?.contains(
-                    lastDetectedVoice.toLowerCase()
+            "lastPlayedSound : ${lastPlayedSound?.lowercase()}".log("monitor_")
+            "lastDetectedVoice : ${lastDetectedVoice.lowercase()}".log("monitor_")
+            if (userWantsToAskSomething && (lastPlayedSound?.lowercase()?.contains(
+                    lastDetectedVoice.lowercase()
                 ) == false)
             ) {
                 views.questionTv.text = lastDetectedVoice

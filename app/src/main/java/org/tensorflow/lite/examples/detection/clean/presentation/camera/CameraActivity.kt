@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.tensorflow.lite.examples.detection
+package org.tensorflow.lite.examples.detection.clean.presentation.camera
 
 import android.Manifest
 import android.app.Fragment
@@ -35,9 +35,14 @@ import android.view.WindowManager
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
+import dagger.hilt.android.AndroidEntryPoint
+import org.tensorflow.lite.examples.detection.CameraConnectionFragment
+import org.tensorflow.lite.examples.detection.LegacyCameraConnectionFragment
+import org.tensorflow.lite.examples.detection.R
 import org.tensorflow.lite.examples.detection.databinding.TfeOdActivityCameraBinding
 import org.tensorflow.lite.examples.detection.env.ImageUtils
 import org.tensorflow.lite.examples.detection.env.Logger
+import org.tensorflow.lite.examples.detection.clean.presentation.voice.VoiceActivity
 
 abstract class CameraActivity : AppCompatActivity(), OnImageAvailableListener, PreviewCallback,
     CompoundButton.OnCheckedChangeListener, View.OnClickListener {
@@ -80,6 +85,9 @@ abstract class CameraActivity : AppCompatActivity(), OnImageAvailableListener, P
             requestPermission()
         }
         views.fabSwitchcam.setOnClickListener { onSwitchCamClick() }
+        views.fabVoice.setOnClickListener {
+            startActivity(Intent(this, VoiceActivity::class.java))
+        }
     }
 
     private fun onSwitchCamClick() {

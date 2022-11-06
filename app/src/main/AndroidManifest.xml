@@ -21,24 +21,24 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme.ObjectDetection" >
         <activity
-            android:name=".voice.VoiceActivity"
+            android:name=".clean.presentation.voice.VoiceActivity"
             android:exported="true" >
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-        <activity
-            android:name=".DetectorActivity"
-            android:exported="true"
-            android:label="@string/tfe_od_app_name"
-            android:screenOrientation="portrait" >
 <!--            <intent-filter>-->
 <!--                <action android:name="android.intent.action.MAIN" />-->
 
 <!--                <category android:name="android.intent.category.LAUNCHER" />-->
 <!--            </intent-filter>-->
+        </activity>
+        <activity
+            android:name=".clean.presentation.camera.DetectorActivity"
+            android:exported="true"
+            android:label="@string/tfe_od_app_name"
+            android:screenOrientation="portrait" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
         </activity>
     </application>
 

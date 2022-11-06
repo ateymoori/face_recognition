@@ -13,45 +13,46 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.tensorflow.lite.examples.detection
+package org.tensorflow.lite.examples.detection.clean.presentation.camera
 
 import android.app.AlertDialog
-import org.tensorflow.lite.examples.detection.CameraActivity
 import android.media.ImageReader.OnImageAvailableListener
 import org.tensorflow.lite.examples.detection.customview.OverlayView
 import org.tensorflow.lite.examples.detection.tflite.SimilarityClassifier
 import org.tensorflow.lite.examples.detection.tracking.MultiBoxTracker
 import org.tensorflow.lite.examples.detection.env.BorderedText
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import android.os.Bundle
-import org.tensorflow.lite.examples.detection.R
 import com.google.mlkit.vision.face.FaceDetectorOptions
 import com.google.mlkit.vision.face.FaceDetection
 import android.util.TypedValue
-import org.tensorflow.lite.examples.detection.DetectorActivity
 import org.tensorflow.lite.examples.detection.tflite.TFLiteObjectDetectionAPIModel
 import android.widget.Toast
-import org.tensorflow.lite.examples.detection.customview.OverlayView.DrawCallback
 import com.google.mlkit.vision.common.InputImage
 import com.google.android.gms.tasks.OnSuccessListener
 import org.tensorflow.lite.examples.detection.tflite.SimilarityClassifier.Recognition
-import android.view.LayoutInflater
 import android.widget.TextView
 import android.widget.EditText
 import android.content.DialogInterface
 import android.graphics.*
-import org.tensorflow.lite.examples.detection.DetectorActivity.DetectorMode
 import android.hardware.camera2.CameraCharacteristics
 import android.os.SystemClock
 import android.util.Size
 import android.view.View
 import android.widget.ImageView
+import androidx.activity.viewModels
 import androidx.appcompat.widget.AppCompatImageView
-import androidx.core.widget.ImageViewCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.google.mlkit.vision.face.Face
 import com.google.mlkit.vision.face.FaceDetector
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
+import org.tensorflow.lite.examples.detection.R
+import org.tensorflow.lite.examples.detection.clean.data.models.MemberModel
 import org.tensorflow.lite.examples.detection.env.ImageUtils
 import org.tensorflow.lite.examples.detection.env.Logger
+import org.tensorflow.lite.examples.detection.log
 import java.io.IOException
 import java.util.*
 
@@ -59,7 +60,11 @@ import java.util.*
  * An activity that uses a TensorFlowMultiBoxDetector and ObjectTracker to detect and then track
  * objects.
  */
+@AndroidEntryPoint
 class DetectorActivity : CameraActivity(), OnImageAvailableListener {
+
+    private val viewModel: CameraViewModel by viewModels()
+
     var trackingOverlay: OverlayView? = null
     private var sensorOrientation: Int? = null
     private var detector: SimilarityClassifier? = null
@@ -95,8 +100,8 @@ class DetectorActivity : CameraActivity(), OnImageAvailableListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         findViewById<View>(R.id.fab_add).setOnClickListener(View.OnClickListener { onAddClick() })
-        detectedFaceVU = findViewById<View>(R.id.detectedFaceVU)  as AppCompatImageView
-        dataVU = findViewById<View>(R.id.dataVU)  as TextView
+        detectedFaceVU = findViewById<View>(R.id.detectedFaceVU) as AppCompatImageView
+        dataVU = findViewById<View>(R.id.dataVU) as TextView
 
 
         // Real-time contour detection of multiple faces
@@ -293,6 +298,18 @@ class DetectorActivity : CameraActivity(), OnImageAvailableListener {
             if (name.isEmpty()) {
                 return@OnClickListener
             }
+
+            viewModel.syncUser(
+                MemberModel(
+                    id = rec.id?.toInt() ?: 0,
+                    face = rec.crop,
+                    user_name = name,
+                    last_mood = "",
+                    last_conversation = "",
+                    uuid = UUID.randomUUID().toString()
+                )
+            )
+
             detector!!.register(name, rec)
             "${name} ----- ${rec.toString()} logggg".log("tag__")
             //knownFaces.put(name, rec);
@@ -445,8 +462,8 @@ class DetectorActivity : CameraActivity(), OnImageAvailableListener {
                     detectedFaceVU?.setImageBitmap(faceBmp)
                     dataVU?.text = label
 
-                //    face.smilingProbability
-              //      result.id.toString().toString().log("extra__")
+                    //    face.smilingProbability
+                    //      result.id.toString().toString().log("extra__")
 
                 }
 

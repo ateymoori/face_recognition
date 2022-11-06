@@ -26,7 +26,10 @@ import android.content.res.AssetFileDescriptor
 import android.util.Log
 import android.util.Pair
 import com.orhanobut.hawk.Hawk
+import kotlinx.coroutines.coroutineScope
 import org.tensorflow.lite.Interpreter
+import org.tensorflow.lite.examples.detection.clean.data.models.MemberModel
+import org.tensorflow.lite.examples.detection.clean.domain.usecases.AddSyncMember
 import org.tensorflow.lite.examples.detection.env.Logger
 import org.tensorflow.lite.examples.detection.log
 import java.io.BufferedReader
@@ -40,6 +43,7 @@ import java.nio.ByteOrder
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
 import java.util.*
+import javax.inject.Inject
 import kotlin.collections.ArrayList
 
 /**
@@ -52,8 +56,9 @@ import kotlin.collections.ArrayList
  * - https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/detection_model_zoo.md
  * - https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/running_on_mobile_tensorflowlite.md#running-our-model-on-android
  */
-class TFLiteObjectDetectionAPIModel private constructor() : SimilarityClassifier {
+class TFLiteObjectDetectionAPIModel constructor() : SimilarityClassifier {
     private var isModelQuantized = false
+
 
     // Config values.
     private var inputSize = 0
@@ -87,10 +92,11 @@ class TFLiteObjectDetectionAPIModel private constructor() : SimilarityClassifier
     override fun register(name: String?, rec: Recognition?) {
         registered[name] = rec
         saveData()
+
+
     }
 
     init {
-        val original = registered
         val data = Hawk.get<HashMap<String?, Recognition?>>("data")
         data?.let {
             it.forEach {
