@@ -72,7 +72,8 @@ abstract class CameraActivity : AppCompatActivity(), OnImageAvailableListener, P
         super.onCreate(null)
         val intent = intent
         //useFacing = intent.getIntExtra(KEY_USE_FACING, CameraCharacteristics.LENS_FACING_FRONT);
-        cameraFacing = intent.getIntExtra(KEY_USE_FACING, CameraCharacteristics.LENS_FACING_BACK)
+       // cameraFacing = intent.getIntExtra(KEY_USE_FACING, CameraCharacteristics.LENS_FACING_BACK)
+        cameraFacing = intent.getIntExtra(KEY_USE_FACING, CameraCharacteristics.LENS_FACING_FRONT)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         views = TfeOdActivityCameraBinding.inflate(layoutInflater)
         setContentView(views.root)
@@ -88,6 +89,7 @@ abstract class CameraActivity : AppCompatActivity(), OnImageAvailableListener, P
         views.fabVoice.setOnClickListener {
             startActivity(Intent(this, VoiceActivity::class.java))
         }
+
     }
 
     private fun onSwitchCamClick() {

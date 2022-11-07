@@ -41,15 +41,14 @@ import android.view.View
 import android.widget.ImageView
 import androidx.activity.viewModels
 import androidx.appcompat.widget.AppCompatImageView
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import com.google.mlkit.vision.face.Face
 import com.google.mlkit.vision.face.FaceDetector
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import org.tensorflow.lite.examples.detection.R
 import org.tensorflow.lite.examples.detection.clean.data.models.MemberModel
+import org.tensorflow.lite.examples.detection.clean.data.utils.toast
 import org.tensorflow.lite.examples.detection.env.ImageUtils
 import org.tensorflow.lite.examples.detection.env.Logger
 import org.tensorflow.lite.examples.detection.log
@@ -100,21 +99,27 @@ class DetectorActivity : CameraActivity(), OnImageAvailableListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         findViewById<View>(R.id.fab_add).setOnClickListener(View.OnClickListener { onAddClick() })
+        findViewById<View>(R.id.fab_clear).setOnClickListener(View.OnClickListener { detector?.clearData() })
         detectedFaceVU = findViewById<View>(R.id.detectedFaceVU) as AppCompatImageView
         dataVU = findViewById<View>(R.id.dataVU) as TextView
 
 
         // Real-time contour detection of multiple faces
-        val options = FaceDetectorOptions.Builder()
-            .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST)
+        val options = FaceDetectorOptions.Builder().setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST)
             .setContourMode(FaceDetectorOptions.LANDMARK_MODE_NONE)
-            .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_NONE)
-            .build()
+            .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_NONE).build()
         val detector = FaceDetection.getClient(options)
         faceDetector = detector
 
 
         //checkWritePermission();
+
+
+        lifecycleScope.launch {
+            viewModel._member.collect { it ->
+                it?.user_name?.toast()
+            }
+        }
     }
 
     private fun onAddClick() {
@@ -131,11 +136,7 @@ class DetectorActivity : CameraActivity(), OnImageAvailableListener {
         tracker = MultiBoxTracker(this)
         try {
             detector = TFLiteObjectDetectionAPIModel.create(
-                assets,
-                TF_OD_API_MODEL_FILE,
-                TF_OD_API_LABELS_FILE,
-                TF_OD_API_INPUT_SIZE,
-                TF_OD_API_IS_QUANTIZED
+                assets, TF_OD_API_MODEL_FILE, TF_OD_API_LABELS_FILE, TF_OD_API_INPUT_SIZE, TF_OD_API_IS_QUANTIZED
             )
             //cropSize = TF_OD_API_INPUT_SIZE;
         } catch (e: IOException) {
@@ -168,9 +169,7 @@ class DetectorActivity : CameraActivity(), OnImageAvailableListener {
         portraitBmp = Bitmap.createBitmap(targetW, targetH, Bitmap.Config.ARGB_8888)
         faceBmp = Bitmap.createBitmap(TF_OD_API_INPUT_SIZE, TF_OD_API_INPUT_SIZE, Bitmap.Config.ARGB_8888)
         frameToCropTransform = ImageUtils.getTransformationMatrix(
-            previewWidth, previewHeight,
-            cropW, cropH,
-            sensorOrientation!!, MAINTAIN_ASPECT
+            previewWidth, previewHeight, cropW, cropH, sensorOrientation!!, MAINTAIN_ASPECT
         )
 
 //    frameToCropTransform =
@@ -181,9 +180,7 @@ class DetectorActivity : CameraActivity(), OnImageAvailableListener {
         cropToFrameTransform = Matrix()
         frameToCropTransform!!.invert(cropToFrameTransform)
         val frameToPortraitTransform = ImageUtils.getTransformationMatrix(
-            previewWidth, previewHeight,
-            targetW, targetH,
-            sensorOrientation!!, MAINTAIN_ASPECT
+            previewWidth, previewHeight, targetW, targetH, sensorOrientation!!, MAINTAIN_ASPECT
         )
         trackingOverlay = findViewById<View>(R.id.tracking_overlay) as OverlayView
         trackingOverlay!!.addCallback { canvas ->
@@ -216,9 +213,7 @@ class DetectorActivity : CameraActivity(), OnImageAvailableListener {
             ImageUtils.saveBitmap(croppedBitmap)
         }
         val image = InputImage.fromBitmap(croppedBitmap!!, 0)
-        faceDetector
-            ?.process(image)
-            ?.addOnSuccessListener(OnSuccessListener { faces ->
+        faceDetector?.process(image)?.addOnSuccessListener(OnSuccessListener { faces ->
                 if (faces.size == 0) {
                     updateResults(currTimestamp, LinkedList())
                     return@OnSuccessListener
@@ -251,11 +246,7 @@ class DetectorActivity : CameraActivity(), OnImageAvailableListener {
 
     // Face Processing
     private fun createTransform(
-        srcWidth: Int,
-        srcHeight: Int,
-        dstWidth: Int,
-        dstHeight: Int,
-        applyRotation: Int
+        srcWidth: Int, srcHeight: Int, dstWidth: Int, dstHeight: Int, applyRotation: Int
     ): Matrix {
         val matrix = Matrix()
         if (applyRotation != 0) {
@@ -309,10 +300,7 @@ class DetectorActivity : CameraActivity(), OnImageAvailableListener {
                     uuid = UUID.randomUUID().toString()
                 )
             )
-
             detector!!.register(name, rec)
-            "${name} ----- ${rec.toString()} logggg".log("tag__")
-            //knownFaces.put(name, rec);
             dlg.dismiss()
         })
         builder.setView(dialogLayout)
@@ -355,11 +343,7 @@ class DetectorActivity : CameraActivity(), OnImageAvailableListener {
         val targetW = portraitBmp!!.width
         val targetH = portraitBmp!!.height
         val transform = createTransform(
-            sourceW,
-            sourceH,
-            targetW,
-            targetH,
-            sensorOrientation!!
+            sourceW, sourceH, targetW, targetH, sensorOrientation!!
         )
         val cv = Canvas(portraitBmp!!)
 
@@ -423,6 +407,10 @@ class DetectorActivity : CameraActivity(), OnImageAvailableListener {
                         confidence = conf
                         label = result.title ?: "titlee"
 
+                        label.log("face_detected 1")
+                        viewModel.faceDetected(
+                            label
+                        )
 
                         color = if (result.id == "0") {
                             Color.GREEN

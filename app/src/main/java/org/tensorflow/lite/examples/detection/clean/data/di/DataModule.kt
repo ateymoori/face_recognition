@@ -7,7 +7,9 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import org.tensorflow.lite.examples.detection.clean.data.api.RestApi
+import org.tensorflow.lite.examples.detection.clean.data.repositories.InMemoryMembersRepositoryImpl
 import org.tensorflow.lite.examples.detection.clean.data.repositories.MembersRepositoryImpl
+import org.tensorflow.lite.examples.detection.clean.domain.repositories.InMemoryMembersRepository
 import org.tensorflow.lite.examples.detection.clean.domain.repositories.MembersRepository
 import javax.inject.Singleton
 
@@ -16,7 +18,11 @@ import javax.inject.Singleton
 object DataModule {
     @Provides
     @Singleton
-    fun provideMembers(api: RestApi, @ApplicationContext appContext: Context): MembersRepository {
-        return MembersRepositoryImpl(api, appContext)
+    fun provideMembers(api: RestApi ): MembersRepository {
+        return MembersRepositoryImpl(api)
     }
+
+    @Provides
+    @Singleton
+    fun provideMemoryMembers(membersRepository: MembersRepository): InMemoryMembersRepository = InMemoryMembersRepositoryImpl(membersRepository)
 }

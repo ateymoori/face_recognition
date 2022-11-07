@@ -29,6 +29,7 @@ import com.orhanobut.hawk.Hawk
 import kotlinx.coroutines.coroutineScope
 import org.tensorflow.lite.Interpreter
 import org.tensorflow.lite.examples.detection.clean.data.models.MemberModel
+import org.tensorflow.lite.examples.detection.clean.data.utils.toast
 import org.tensorflow.lite.examples.detection.clean.domain.usecases.AddSyncMember
 import org.tensorflow.lite.examples.detection.env.Logger
 import org.tensorflow.lite.examples.detection.log
@@ -92,8 +93,12 @@ class TFLiteObjectDetectionAPIModel constructor() : SimilarityClassifier {
     override fun register(name: String?, rec: Recognition?) {
         registered[name] = rec
         saveData()
+    }
 
-
+    override fun clearData() {
+        registered.clear()
+        Hawk.delete("data")
+        "All data has been cleared".toast()
     }
 
     init {

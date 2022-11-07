@@ -23,13 +23,14 @@ interface RestApi {
     ): Response<MemberModel>
 
 
-//    @Headers("Content-Type: application/json", "Accept: application/json", "No-Authentication:null")
+    //    @Headers("Content-Type: application/json", "Accept: application/json", "No-Authentication:null")
 //    @POST("$API_VERSION/user/login")
 //    suspend fun login(
 //        @Body profile: LoginModel
 //    ): Response<UserModel>
 //
-//    @GET("$API_VERSION/machines/list")
-//    suspend fun getMachinesList(): Response<List<MachineModel>>
+    @FormUrlEncoded
+    @GET("members/getByName")
+    suspend fun getMemberByName(@Field("name") name:String?): Response<MemberModel>
 
 }

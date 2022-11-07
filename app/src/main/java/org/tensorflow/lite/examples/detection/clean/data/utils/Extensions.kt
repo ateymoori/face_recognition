@@ -12,6 +12,7 @@ import android.widget.ImageView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import com.bumptech.glide.Glide
+import org.tensorflow.lite.examples.detection.MyApplication
 import java.io.File
 import java.nio.charset.StandardCharsets
 import kotlin.math.abs
@@ -44,9 +45,9 @@ fun View.visible(visible: Boolean? = true) {
     this.visibility = if (visible != false) View.VISIBLE else View.GONE
 }
 
-fun String.toast(ctx: Context?): String {
+fun String.toast(): String {
     this.log("toast_")
-    Toast.makeText(ctx, this, Toast.LENGTH_LONG).show()
+    Toast.makeText(MyApplication.instance, this, Toast.LENGTH_LONG).show()
     return this
 }
 

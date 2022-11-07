@@ -14,13 +14,14 @@ import org.tensorflow.lite.examples.detection.clean.data.utils.BaseDataSource
 import org.tensorflow.lite.examples.detection.clean.data.utils.Resource
 import org.tensorflow.lite.examples.detection.clean.data.utils.onError
 import org.tensorflow.lite.examples.detection.clean.data.utils.onSuccess
+import org.tensorflow.lite.examples.detection.clean.domain.repositories.InMemoryMembersRepository
 import org.tensorflow.lite.examples.detection.clean.domain.repositories.MembersRepository
 import org.tensorflow.lite.examples.detection.log
 import java.io.*
 import javax.inject.Inject
 
 class MembersRepositoryImpl @Inject constructor(
-    private val restApi: RestApi, @ApplicationContext private val appContext: Context
+    private val restApi: RestApi,
 ) : MembersRepository, BaseDataSource() {
 
     override suspend fun addSyncRepository(member: MemberModel): Resource<MemberModel> {
@@ -39,6 +40,18 @@ class MembersRepositoryImpl @Inject constructor(
         return Resource.Failure.Generic(null)
     }
 
+    override suspend fun getMemberByName(name: String?): Resource<MemberModel> {
+        getResult {
+            restApi.getMemberByName(
+                name
+            )
+        }.onSuccess {
+            return Resource.Success(it)
+        }.onError {
+            return Resource.Failure.Generic(it)
+        }
+        return Resource.Failure.Generic(null)
+    }
 
     private fun bitmapToMultipart(imageBitmap: Bitmap): MultipartBody.Part {
         val bos = ByteArrayOutputStream()
