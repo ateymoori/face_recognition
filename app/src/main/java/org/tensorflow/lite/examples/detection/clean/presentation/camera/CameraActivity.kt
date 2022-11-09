@@ -77,19 +77,16 @@ abstract class CameraActivity : AppCompatActivity(), OnImageAvailableListener, P
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         views = TfeOdActivityCameraBinding.inflate(layoutInflater)
         setContentView(views.root)
-        val toolbar = views.toolbar
-        setSupportActionBar(toolbar)
-        supportActionBar!!.setDisplayShowTitleEnabled(false)
         if (hasPermission()) {
             setFragment()
         } else {
             requestPermission()
         }
         views.fabSwitchcam.setOnClickListener { onSwitchCamClick() }
-        views.fabVoice.setOnClickListener {
-            startActivity(Intent(this, VoiceActivity::class.java))
-        }
-
+//        views.fabVoice.setOnClickListener {
+//
+//            startActivity(Intent(this, VoiceActivity::class.java))
+//        }
     }
 
     private fun onSwitchCamClick() {

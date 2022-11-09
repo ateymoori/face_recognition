@@ -2,6 +2,8 @@ package org.tensorflow.lite.examples.detection.clean.data.api
 
 import android.graphics.Bitmap
 import okhttp3.MultipartBody
+import org.tensorflow.lite.examples.detection.clean.data.models.ConversationModel
+import org.tensorflow.lite.examples.detection.clean.data.models.ConversationRequestModel
 import org.tensorflow.lite.examples.detection.clean.data.models.MemberModel
 import retrofit2.Response
 import retrofit2.http.*
@@ -23,14 +25,12 @@ interface RestApi {
     ): Response<MemberModel>
 
 
-    //    @Headers("Content-Type: application/json", "Accept: application/json", "No-Authentication:null")
-//    @POST("$API_VERSION/user/login")
-//    suspend fun login(
-//        @Body profile: LoginModel
-//    ): Response<UserModel>
-//
-    @FormUrlEncoded
+    @POST("conversation")
+    suspend fun startConversation(
+        @Body conversation: ConversationRequestModel
+    ): Response<ConversationModel>
+
     @GET("members/getByName")
-    suspend fun getMemberByName(@Field("name") name:String?): Response<MemberModel>
+    suspend fun getMemberByName(@Query("name") name: String?): Response<MemberModel>
 
 }

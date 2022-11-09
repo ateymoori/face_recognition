@@ -15,43 +15,53 @@
  */
 package org.tensorflow.lite.examples.detection.clean.presentation.camera
 
+import android.Manifest
 import android.app.AlertDialog
-import android.media.ImageReader.OnImageAvailableListener
-import org.tensorflow.lite.examples.detection.customview.OverlayView
-import org.tensorflow.lite.examples.detection.tflite.SimilarityClassifier
-import org.tensorflow.lite.examples.detection.tracking.MultiBoxTracker
-import org.tensorflow.lite.examples.detection.env.BorderedText
-import android.os.Bundle
-import com.google.mlkit.vision.face.FaceDetectorOptions
-import com.google.mlkit.vision.face.FaceDetection
-import android.util.TypedValue
-import org.tensorflow.lite.examples.detection.tflite.TFLiteObjectDetectionAPIModel
-import android.widget.Toast
-import com.google.mlkit.vision.common.InputImage
-import com.google.android.gms.tasks.OnSuccessListener
-import org.tensorflow.lite.examples.detection.tflite.SimilarityClassifier.Recognition
-import android.widget.TextView
-import android.widget.EditText
+import android.content.Context
 import android.content.DialogInterface
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.*
 import android.hardware.camera2.CameraCharacteristics
+import android.media.AudioManager
+import android.media.ImageReader.OnImageAvailableListener
+import android.os.Bundle
 import android.os.SystemClock
+import android.speech.RecognitionListener
+import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
+import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import android.util.Size
+import android.util.TypedValue
 import android.view.View
+import android.widget.EditText
 import android.widget.ImageView
+import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.viewModels
-import androidx.appcompat.widget.AppCompatImageView
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.google.android.gms.tasks.OnSuccessListener
+import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.Face
+import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetector
+import com.google.mlkit.vision.face.FaceDetectorOptions
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import org.tensorflow.lite.examples.detection.R
 import org.tensorflow.lite.examples.detection.clean.data.models.MemberModel
-import org.tensorflow.lite.examples.detection.clean.data.utils.toast
+import org.tensorflow.lite.examples.detection.clean.data.utils.log
+import org.tensorflow.lite.examples.detection.customview.OverlayView
+import org.tensorflow.lite.examples.detection.env.BorderedText
 import org.tensorflow.lite.examples.detection.env.ImageUtils
 import org.tensorflow.lite.examples.detection.env.Logger
-import org.tensorflow.lite.examples.detection.log
+import org.tensorflow.lite.examples.detection.tflite.SimilarityClassifier
+import org.tensorflow.lite.examples.detection.tflite.SimilarityClassifier.Recognition
+import org.tensorflow.lite.examples.detection.tflite.TFLiteObjectDetectionAPIModel
+import org.tensorflow.lite.examples.detection.tracking.MultiBoxTracker
 import java.io.IOException
 import java.util.*
 
@@ -60,9 +70,10 @@ import java.util.*
  * objects.
  */
 @AndroidEntryPoint
-class DetectorActivity : CameraActivity(), OnImageAvailableListener {
+open class DetectorActivity : CameraActivity(), OnImageAvailableListener, RecognitionListener {
 
-    private val viewModel: CameraViewModel by viewModels()
+    private lateinit var detectedUser: MemberModel
+    val viewModel: CameraViewModel by viewModels()
 
     var trackingOverlay: OverlayView? = null
     private var sensorOrientation: Int? = null
@@ -92,16 +103,22 @@ class DetectorActivity : CameraActivity(), OnImageAvailableListener {
     // here the face is cropped and drawn
     private var faceBmp: Bitmap? = null
 
-    private var detectedFaceVU: AppCompatImageView? = null
-    private var dataVU: TextView? = null
+//    private var detectedFaceVU: AppCompatImageView? = null
+//    private var dataVU: TextView? = null
 
     //private HashMap<String, Classifier.Recognition> knownFaces = new HashMap<>();
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         findViewById<View>(R.id.fab_add).setOnClickListener(View.OnClickListener { onAddClick() })
         findViewById<View>(R.id.fab_clear).setOnClickListener(View.OnClickListener { detector?.clearData() })
-        detectedFaceVU = findViewById<View>(R.id.detectedFaceVU) as AppCompatImageView
-        dataVU = findViewById<View>(R.id.dataVU) as TextView
+
+        views.fabVoice.setOnClickListener {
+            viewModel.conversation("Who is Sweden prime minister?")
+            //   startActivity(Intent(this, VoiceActivity::class.java))
+        }
+
+//        detectedFaceVU = findViewById<View>(R.id.detectedFaceVU) as AppCompatImageView
+//        dataVU = findViewById<View>(R.id.dataVU) as TextView
 
 
         // Real-time contour detection of multiple faces
@@ -111,15 +128,29 @@ class DetectorActivity : CameraActivity(), OnImageAvailableListener {
         val detector = FaceDetection.getClient(options)
         faceDetector = detector
 
-
+        init()
         //checkWritePermission();
 
 
         lifecycleScope.launch {
             viewModel._member.collect { it ->
-                it?.user_name?.toast()
+                "${it?.user_name.toString()}".log("debug_face detectro activity")
+                it?.let {
+                    detectedUser = it
+                    views.userAvatar.setImageBitmap(it.face)
+                    views.userName.setText(it.user_name)
+                }
+            }
+
+        }
+
+        lifecycleScope.launch {
+            viewModel._conversation.collect {
+                views.resultsTv.text = it?.second_answer
+                speak(it?.second_answer)
             }
         }
+
     }
 
     private fun onAddClick() {
@@ -214,19 +245,19 @@ class DetectorActivity : CameraActivity(), OnImageAvailableListener {
         }
         val image = InputImage.fromBitmap(croppedBitmap!!, 0)
         faceDetector?.process(image)?.addOnSuccessListener(OnSuccessListener { faces ->
-                if (faces.size == 0) {
-                    updateResults(currTimestamp, LinkedList())
-                    return@OnSuccessListener
-                }
-                runInBackground {
-                    onFacesDetected(currTimestamp, faces, addPending)
-                    addPending = false
-                }
-            })
+            if (faces.size == 0) {
+                updateResults(currTimestamp, LinkedList())
+                return@OnSuccessListener
+            }
+            runInBackground {
+                onFacesDetected(currTimestamp, faces, addPending)
+                addPending = false
+            }
+        })
     }
 
     override val layoutId: Int
-        protected get() = R.layout.tfe_od_camera_connection_fragment_tracking
+        get() = R.layout.tfe_od_camera_connection_fragment_tracking
     override val desiredPreviewFrameSize: Size
         get() = Size(640, 480)
 
@@ -409,7 +440,7 @@ class DetectorActivity : CameraActivity(), OnImageAvailableListener {
 
                         label.log("face_detected 1")
                         viewModel.faceDetected(
-                            label
+                            label, faceBmp
                         )
 
                         color = if (result.id == "0") {
@@ -446,14 +477,14 @@ class DetectorActivity : CameraActivity(), OnImageAvailableListener {
 //                    it.
 //                    it.toString().log("extra__")
 //                }
-                runOnUiThread {
-                    detectedFaceVU?.setImageBitmap(faceBmp)
-                    dataVU?.text = label
-
-                    //    face.smilingProbability
-                    //      result.id.toString().toString().log("extra__")
-
-                }
+//                runOnUiThread {
+//                    detectedFaceVU?.setImageBitmap(faceBmp)
+//                    dataVU?.text = label
+//
+//                    //    face.smilingProbability
+//                    //      result.id.toString().toString().log("extra__")
+//
+//                }
 
 
             }
@@ -490,5 +521,191 @@ class DetectorActivity : CameraActivity(), OnImageAvailableListener {
         //private static final Size CROP_SIZE = new Size(320, 320);
         private const val SAVE_PREVIEW_BITMAP = false
         private const val TEXT_SIZE_DIP = 10f
+    }
+
+
+    ///////////VOICE
+    private lateinit var recognizerIntent: Intent
+    private lateinit var speechRecognizer: SpeechRecognizer
+    private var lastDetectedVoice = ""
+    private var lastPlayedSound: String? = ""
+
+
+    fun init() {
+        if (ContextCompat.checkSelfPermission(
+                this, Manifest.permission.RECORD_AUDIO
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            checkPermission()
+            return
+        }
+        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
+
+        //init the voice
+        speak("")
+
+        startListening()
+    }
+
+    private val textToSpeechEngine: TextToSpeech by lazy {
+        TextToSpeech(
+            this
+        ) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                textToSpeechEngine.language = Locale.UK
+            }
+        }
+    }
+
+    private fun checkPermission() {
+        ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), 1000)
+    }
+
+    fun startListening() {
+        // if (!::recognizerIntent.isInitialized) {
+        recognizerIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_WEB_SEARCH)
+            putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, packageName)
+            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
+            putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
+        }
+        speechRecognizer.setRecognitionListener(this)
+        //  }
+        speechRecognizer.startListening(recognizerIntent)
+
+    }
+
+    fun stopListening() {
+        speechRecognizer.stopListening()
+    }
+
+    override fun onResults(results: Bundle?) {
+        startListening()
+        "".log(" test_voice onResults")
+    }
+
+    override fun onPartialResults(partialResults: Bundle?) {
+        val matches = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+        if (matches != null) {
+            val text = matches.get(0)
+            lastDetectedVoice = text
+            text.log("test_voice partialResults")
+        }
+
+    }
+
+    override fun onEvent(eventType: Int, params: Bundle?) {
+        "onEvent $eventType".log("test_voice ")
+    }
+
+    override fun onReadyForSpeech(params: Bundle?) {
+    }
+
+    override fun onBeginningOfSpeech() {
+    }
+
+    override fun onRmsChanged(rmsdB: Float) {
+    }
+
+    override fun onBufferReceived(buffer: ByteArray?) {
+    }
+
+    override fun onEndOfSpeech() {
+        "onEndOfSpeech".log("test_voice")
+        detectAndAction(lastDetectedVoice)
+    }
+
+    override fun onError(error: Int) {
+        "onError".log("test_voice")
+        startListening()
+    }
+
+    fun muteAudio() {
+        val amanager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        amanager.setStreamMute(AudioManager.STREAM_NOTIFICATION, true)
+        amanager.setStreamMute(AudioManager.STREAM_ALARM, true)
+        amanager.setStreamMute(AudioManager.STREAM_MUSIC, true)
+        amanager.setStreamMute(AudioManager.STREAM_RING, true)
+        amanager.setStreamMute(AudioManager.STREAM_SYSTEM, true)
+    }
+
+    fun unMuteAudio() {
+        val amanager = getSystemService(AUDIO_SERVICE) as AudioManager
+        amanager.setStreamMute(AudioManager.STREAM_NOTIFICATION, false)
+        amanager.setStreamMute(AudioManager.STREAM_ALARM, false)
+        amanager.setStreamMute(AudioManager.STREAM_MUSIC, false)
+        amanager.setStreamMute(AudioManager.STREAM_RING, false)
+        amanager.setStreamMute(AudioManager.STREAM_SYSTEM, false)
+    }
+
+    var userWantsToAskSomething = false
+    fun detectAndAction(text: String) {
+
+        if (text.isEmpty()) return
+
+        if (text.lowercase().contains("hey kitty")) {
+            lastDetectedVoice = ""
+            userWantsToAskSomething = true
+            if(::detectedUser.isInitialized){
+                speak("Hey ${detectedUser.user_name}, What can I do for you?")
+            }
+
+        } else {
+            //handle the question/order
+            "lastPlayedSound : ${lastPlayedSound?.lowercase()}".log("monitor_")
+            "lastDetectedVoice : ${lastDetectedVoice.lowercase()}".log("monitor_")
+            if (userWantsToAskSomething && (lastPlayedSound?.lowercase()?.contains(
+                    lastDetectedVoice.lowercase()
+                ) == false)
+            ) {
+                views.questionTv.text = lastDetectedVoice
+                viewModel.conversation(lastDetectedVoice)
+                userWantsToAskSomething = false
+//                speak("I dont know")
+            }
+
+
+        }
+
+        views.resultsTv.text = text
+
+    }
+
+    fun speak(text: String?) {
+        textToSpeechEngine.speak(text, TextToSpeech.QUEUE_FLUSH, null, "tts1")
+
+        textToSpeechEngine.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+            override fun onStart(utteranceId: String?) {
+                lastPlayedSound = text
+                "onStart $text  ".log("speak_")
+                unMuteAudio()
+                stopListening()
+            }
+
+            override fun onDone(utteranceId: String?) {
+                "onDone".log("speak_")
+                muteAudio()
+                startListening()
+            }
+
+            override fun onError(utteranceId: String?) {
+                "onError".log("speak_")
+                muteAudio()
+                startListening()
+            }
+        })
+    }
+
+    fun sendCommandToGoogleAssistant(command: String) {
+        val command = "navigate home by public transport"
+        val intent = Intent(Intent.ACTION_WEB_SEARCH)
+        intent.setClassName(
+            "com.google.android.googlequicksearchbox",
+            "com.google.android.googlequicksearchbox.SearchActivity"
+        )
+        intent.putExtra(command, command)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK //necessary if launching from Service
+
+        startActivity(intent)
     }
 }

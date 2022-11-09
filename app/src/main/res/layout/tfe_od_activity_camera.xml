@@ -16,53 +16,69 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-
         <FrameLayout
             android:id="@+id/container"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             tools:context="org.tensorflow.demo.CameraActivity" />
 
-        <androidx.appcompat.widget.Toolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:layout_alignParentTop="true"
-            android:background="@color/tfe_semi_transparent">
-
-            <ImageView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:src="@drawable/tfl2_logo"
-                android:visibility="gone" />
-
-        </androidx.appcompat.widget.Toolbar>
-
     </RelativeLayout>
 
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:background="#ffffff"
+        android:layout_marginBottom="@dimen/_24sdp"
         android:orientation="vertical"
         app:layout_constraintBottom_toTopOf="@id/buttonsView"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
-        <androidx.appcompat.widget.AppCompatImageView
-            android:id="@+id/detectedFaceVU"
-            android:layout_width="80dp"
-            android:layout_height="80dp" />
-
         <TextView
-            android:id="@+id/dataVU"
+            android:id="@+id/questionTv"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="test test "
-            android:textColor="#000000"
-            android:textSize="16sp" />
+            android:text=""
+            android:textColor="#00FF41"
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/resultsTv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textColor="#008F11"
+            android:textSize="18sp" />
 
     </LinearLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/_24sdp"
+        android:orientation="vertical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/userAvatar"
+            android:layout_width="@dimen/_64sdp"
+            android:layout_height="@dimen/_64sdp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/userName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Unknown"
+            android:textColor="#00FF41"
+            android:textSize="28sp"
+            app:layout_constraintEnd_toEndOf="@id/userAvatar"
+            app:layout_constraintStart_toStartOf="@id/userAvatar"
+            app:layout_constraintTop_toBottomOf="@id/userAvatar" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <LinearLayout
         android:id="@+id/buttonsView"
@@ -81,7 +97,6 @@
             android:layout_margin="16dp"
             android:src="@drawable/ic_baseline_switch_camera_24"
             android:tint="@android:color/white" />
-
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/fab_add"
