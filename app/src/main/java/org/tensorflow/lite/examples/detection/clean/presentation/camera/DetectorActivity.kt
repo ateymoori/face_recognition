@@ -135,11 +135,11 @@ open class DetectorActivity : CameraActivity(), OnImageAvailableListener, Recogn
         lifecycleScope.launch {
             viewModel._conversation.collect {
                 views.resultsTv.text = it?.second_answer
-                speak(it?.second_answer)
+               // speak(it?.second_answer)
             }
         }
 
-        initConnection()
+       // initConnection()
 
     }
 
@@ -415,25 +415,25 @@ open class DetectorActivity : CameraActivity(), OnImageAvailableListener, Recogn
 
                 "left: ${faceBB.left}: ,,, right:  ${faceBB.right}".log("facebb")
 
-                if (faceBB.left.toInt() > 0 && movingType == MovingType.FRONT) {
-                    val leftRight = when {
-                        faceBB.left.toInt() in 100..200 -> {
-                            front()
-                            "Middle"
-                        }
-                        faceBB.left > 200 -> {
-                            right()
-                            "Left"
-                        }
-                        else -> {
-                            left()
-                            "Right"
-                        }
-                    }
-                    runOnUiThread {
-                        views.tvDirection.text = leftRight
-                    }
-                }
+//                if (faceBB.left.toInt() > 0 && movingType == MovingType.FRONT) {
+//                    val leftRight = when {
+//                        faceBB.left.toInt() in 100..200 -> {
+//                            front()
+//                            "Middle"
+//                        }
+//                        faceBB.left > 200 -> {
+//                            right()
+//                            "Left"
+//                        }
+//                        else -> {
+//                            left()
+//                            "Right"
+//                        }
+//                    }
+//                    runOnUiThread {
+//                        views.tvDirection.text = leftRight
+//                    }
+//                }
 //                val leftRight = if (faceBB.left > 100) {
 //                    "Left"
 //                } else {
@@ -559,7 +559,7 @@ open class DetectorActivity : CameraActivity(), OnImageAvailableListener, Recogn
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
 
         //init the voice
-        speak("")
+        //speak("")
 
         startListening()
     }
@@ -629,7 +629,7 @@ open class DetectorActivity : CameraActivity(), OnImageAvailableListener, Recogn
 
     override fun onEndOfSpeech() {
         "onEndOfSpeech".log("test_voice")
-        detectAndAction(lastDetectedVoice)
+        //detectAndAction(lastDetectedVoice)
     }
 
     override fun onError(error: Int) {
@@ -657,63 +657,63 @@ open class DetectorActivity : CameraActivity(), OnImageAvailableListener, Recogn
 
     var userWantsToAskSomething = false
 
-    enum class MovingType {
-        BACK, LEFT, RIGHT, FRONT, STOP
-    }
-
-    var movingType: MovingType = MovingType.STOP
-    fun detectAndAction(text: String) {
-
-        if (text.isEmpty()) return
-
-        var command = text.lowercase()
-        command.log("blueeeeee")
-        when {
-            command.contains("hey") -> {
-                lastDetectedVoice = ""
-                userWantsToAskSomething = true
-                if (::detectedUser.isInitialized) {
-                    speak("Hey ${detectedUser.user_name}, What can I do for you?")
-                }
-            }
-            command.contains("follow") -> {
-                movingType = MovingType.FRONT
-                front()
-                speak("Ok ${detectedUser.user_name}, I am coming")
-            }
-            command.contains("fr") -> {
-                movingType = MovingType.FRONT
-                front()
-            }
-            command.contains("ba") -> {
-                movingType = MovingType.BACK
-                back()
-            }
-            command.contains("le") -> {
-                movingType = MovingType.LEFT
-                left()
-            }
-            command.contains("st") -> {
-                movingType = MovingType.STOP
-                stop()
-            }
-            command.contains("ri") -> {
-                movingType = MovingType.RIGHT
-                right()
-            }
-            else -> {
-                if (userWantsToAskSomething && (lastPlayedSound?.lowercase()?.contains(
-                        lastDetectedVoice.lowercase()
-                    ) == false)
-                ) {
-                    views.questionTv.text = lastDetectedVoice
-                    viewModel.conversation(lastDetectedVoice)
-                    userWantsToAskSomething = false
-                    speak("Ok ${detectedUser.user_name}, I am moving")
-//                speak("I dont know")
-                }
-            }
-        }
+//    enum class MovingType {
+//        BACK, LEFT, RIGHT, FRONT, STOP
+//    }
+//
+//    var movingType: MovingType = MovingType.STOP
+//    fun detectAndAction(text: String) {
+//
+//        if (text.isEmpty()) return
+//
+//        var command = text.lowercase()
+//        command.log("blueeeeee")
+//        when {
+//            command.contains("hey") -> {
+//                lastDetectedVoice = ""
+//                userWantsToAskSomething = true
+//                if (::detectedUser.isInitialized) {
+//                    speak("Hey ${detectedUser.user_name}, What can I do for you?")
+//                }
+//            }
+//            command.contains("follow") -> {
+//                movingType = MovingType.FRONT
+//                front()
+//                speak("Ok ${detectedUser.user_name}, I am coming")
+//            }
+//            command.contains("fr") -> {
+//                movingType = MovingType.FRONT
+//                front()
+//            }
+//            command.contains("ba") -> {
+//                movingType = MovingType.BACK
+//                back()
+//            }
+//            command.contains("le") -> {
+//                movingType = MovingType.LEFT
+//                left()
+//            }
+//            command.contains("st") -> {
+//                movingType = MovingType.STOP
+//                stop()
+//            }
+//            command.contains("ri") -> {
+//                movingType = MovingType.RIGHT
+//                right()
+//            }
+//            else -> {
+//                if (userWantsToAskSomething && (lastPlayedSound?.lowercase()?.contains(
+//                        lastDetectedVoice.lowercase()
+//                    ) == false)
+//                ) {
+//                    views.questionTv.text = lastDetectedVoice
+//                    viewModel.conversation(lastDetectedVoice)
+//                    userWantsToAskSomething = false
+//                    speak("Ok ${detectedUser.user_name}, I am moving")
+////                speak("I dont know")
+//                }
+//            }
+//        }
 
 //        if (text.lowercase().contains("hey kitty")) {
 //            lastDetectedVoice = ""
@@ -739,171 +739,171 @@ open class DetectorActivity : CameraActivity(), OnImageAvailableListener, Recogn
 //
 //        }
 
-        views.resultsTv.text = text
+   //     views.resultsTv.text = text
 
-    }
+   // }
 
     var lastWord: String? = ""
-    fun speak(text: String?) {
-        if (lastWord == text)
-            return
-        textToSpeechEngine.speak(text, TextToSpeech.QUEUE_FLUSH, null, "tts1")
-        lastWord = text
-
-        textToSpeechEngine.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-            override fun onStart(utteranceId: String?) {
-                lastPlayedSound = text
-                "onStart $text  ".log("speak_")
-                unMuteAudio()
-                stopListening()
-            }
-
-            override fun onDone(utteranceId: String?) {
-                "onDone".log("speak_")
-                muteAudio()
-                startListening()
-            }
-
-            override fun onError(utteranceId: String?) {
-                "onError".log("speak_")
-                muteAudio()
-                startListening()
-            }
-        })
-    }
-
-    fun sendCommandToGoogleAssistant(command: String) {
-        val command = "navigate home by public transport"
-        val intent = Intent(Intent.ACTION_WEB_SEARCH)
-        intent.setClassName(
-            "com.google.android.googlequicksearchbox",
-            "com.google.android.googlequicksearchbox.SearchActivity"
-        )
-        intent.putExtra(command, command)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK //necessary if launching from Service
-
-        startActivity(intent)
-    }
-
-    private val TAG = "BluetoothExample"
-    private val DEVICE_NAME = "HC-05"
-    private val DEVICE_ADDRESS = "98:D3:61:F6:A6:69"
-    private val PIN_CODE = "1234"
-    private val BT_UUID = UUID.fromString("00001101-0000-1000-8000-00805f9b34fb")
-
-    private lateinit var bluetoothAdapter: BluetoothAdapter
-    private lateinit var bluetoothSocket: BluetoothSocket
-    private lateinit var outputStream: OutputStream
-
-    fun front() {
-        sendBluetoothData("F")
-    }
-
-    fun back() {
-        sendBluetoothData("B")
-    }
-
-    fun left() {
-        sendBluetoothData("L")
-    }
-
-    fun right() {
-        sendBluetoothData("R")
-    }
-
-    fun stop() {
-        sendBluetoothData("S")
-    }
-
-    fun initConnection() {
-
-//        searchDevices()
-
-        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-
-        if (bluetoothAdapter == null) {
-            Log.d(TAG, "Device doesn't support Bluetooth")
-            return
-        }
-
-        val device: BluetoothDevice = bluetoothAdapter.getRemoteDevice(DEVICE_ADDRESS)
-
-        try {
-            bluetoothSocket = device.createRfcommSocketToServiceRecord(BT_UUID)
-            bluetoothSocket.connect()
-
-            // Provide the PIN code
-            device.setPin(PIN_CODE.toByteArray())
-            device.createBond()
-
-            outputStream = bluetoothSocket.outputStream
-            Log.d(TAG, "Bluetooth connection established.")
-
-            // Send your desired text commands here
-//            sendBluetoothData("F")
-
-        } catch (e: IOException) {
-            Log.d(TAG, "Error occurred during Bluetooth connection", e)
-        }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        destroyConnection()
-    }
-
-    fun destroyConnection() {
-        try {
-            outputStream.close()
-            bluetoothSocket.close()
-        } catch (e: IOException) {
-            Log.e("blueeeeee", "Error occurred while closing Bluetooth connection", e)
-        }
-    }
-
-    private fun sendBluetoothData(data: String) {
-        if (::outputStream.isInitialized)
-            try {
-                outputStream.write(data.toByteArray())
-                Log.d("blueeeeee", "Data sent: $data")
-            } catch (e: IOException) {
-                Log.d("blueeeeee", "Error occurred while sending data", e)
-            }
-    }
-
-    fun searchDevices() {
-        val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
-
-        if (bluetoothAdapter == null) {
-            Log.d(TAG, "Device doesn't support Bluetooth")
-            return
-        }
-
-        if (!bluetoothAdapter.isEnabled) {
-            Log.d(TAG, "Bluetooth is not enabled. Please enable Bluetooth and try again.")
-            return
-        }
-
-        val pairedDevices: Set<BluetoothDevice>? = bluetoothAdapter.bondedDevices
-
-        if (pairedDevices != null && pairedDevices.isNotEmpty()) {
-            for (device: BluetoothDevice in pairedDevices) {
-                val deviceName = device.name
-                val deviceAddress = device.address
-                val deviceUuids = device.uuids
-
-                Log.d(TAG, "Device Name: $deviceName")
-                Log.d(TAG, "MAC Address: $deviceAddress")
-
-                if (deviceUuids != null) {
-                    for (uuid in deviceUuids) {
-                        Log.d(TAG, "UUID: $uuid")
-                    }
-                }
-                Log.d(TAG, "---------------------------")
-            }
-        } else {
-            Log.d(TAG, "No paired devices found.")
-        }
-    }
+//    fun speak(text: String?) {
+//        if (lastWord == text)
+//            return
+//        textToSpeechEngine.speak(text, TextToSpeech.QUEUE_FLUSH, null, "tts1")
+//        lastWord = text
+//
+//        textToSpeechEngine.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+//            override fun onStart(utteranceId: String?) {
+//                lastPlayedSound = text
+//                "onStart $text  ".log("speak_")
+//                unMuteAudio()
+//                stopListening()
+//            }
+//
+//            override fun onDone(utteranceId: String?) {
+//                "onDone".log("speak_")
+//                muteAudio()
+//                startListening()
+//            }
+//
+//            override fun onError(utteranceId: String?) {
+//                "onError".log("speak_")
+//                muteAudio()
+//                startListening()
+//            }
+//        })
+//    }
+//
+//    fun sendCommandToGoogleAssistant(command: String) {
+//        val command = "navigate home by public transport"
+//        val intent = Intent(Intent.ACTION_WEB_SEARCH)
+//        intent.setClassName(
+//            "com.google.android.googlequicksearchbox",
+//            "com.google.android.googlequicksearchbox.SearchActivity"
+//        )
+//        intent.putExtra(command, command)
+//        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK //necessary if launching from Service
+//
+//        startActivity(intent)
+//    }
+//
+//    private val TAG = "BluetoothExample"
+//    private val DEVICE_NAME = "HC-05"
+//    private val DEVICE_ADDRESS = "98:D3:61:F6:A6:69"
+//    private val PIN_CODE = "1234"
+//    private val BT_UUID = UUID.fromString("00001101-0000-1000-8000-00805f9b34fb")
+//
+//    private lateinit var bluetoothAdapter: BluetoothAdapter
+//    private lateinit var bluetoothSocket: BluetoothSocket
+//    private lateinit var outputStream: OutputStream
+//
+//    fun front() {
+//        sendBluetoothData("F")
+//    }
+//
+//    fun back() {
+//        sendBluetoothData("B")
+//    }
+//
+//    fun left() {
+//        sendBluetoothData("L")
+//    }
+//
+//    fun right() {
+//        sendBluetoothData("R")
+//    }
+//
+//    fun stop() {
+//        sendBluetoothData("S")
+//    }
+//
+//    fun initConnection() {
+//
+////        searchDevices()
+//
+//        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+//
+//        if (bluetoothAdapter == null) {
+//            Log.d(TAG, "Device doesn't support Bluetooth")
+//            return
+//        }
+//
+//        val device: BluetoothDevice = bluetoothAdapter.getRemoteDevice(DEVICE_ADDRESS)
+//
+//        try {
+//            bluetoothSocket = device.createRfcommSocketToServiceRecord(BT_UUID)
+//            bluetoothSocket.connect()
+//
+//            // Provide the PIN code
+//            device.setPin(PIN_CODE.toByteArray())
+//            device.createBond()
+//
+//            outputStream = bluetoothSocket.outputStream
+//            Log.d(TAG, "Bluetooth connection established.")
+//
+//            // Send your desired text commands here
+////            sendBluetoothData("F")
+//
+//        } catch (e: IOException) {
+//            Log.d(TAG, "Error occurred during Bluetooth connection", e)
+//        }
+//    }
+//
+//    override fun onDestroy() {
+//        super.onDestroy()
+//        destroyConnection()
+//    }
+//
+//    fun destroyConnection() {
+//        try {
+//            outputStream.close()
+//            bluetoothSocket.close()
+//        } catch (e: IOException) {
+//            Log.e("blueeeeee", "Error occurred while closing Bluetooth connection", e)
+//        }
+//    }
+//
+//    private fun sendBluetoothData(data: String) {
+//        if (::outputStream.isInitialized)
+//            try {
+//                outputStream.write(data.toByteArray())
+//                Log.d("blueeeeee", "Data sent: $data")
+//            } catch (e: IOException) {
+//                Log.d("blueeeeee", "Error occurred while sending data", e)
+//            }
+//    }
+//
+//    fun searchDevices() {
+//        val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
+//
+//        if (bluetoothAdapter == null) {
+//            Log.d(TAG, "Device doesn't support Bluetooth")
+//            return
+//        }
+//
+//        if (!bluetoothAdapter.isEnabled) {
+//            Log.d(TAG, "Bluetooth is not enabled. Please enable Bluetooth and try again.")
+//            return
+//        }
+//
+//        val pairedDevices: Set<BluetoothDevice>? = bluetoothAdapter.bondedDevices
+//
+//        if (pairedDevices != null && pairedDevices.isNotEmpty()) {
+//            for (device: BluetoothDevice in pairedDevices) {
+//                val deviceName = device.name
+//                val deviceAddress = device.address
+//                val deviceUuids = device.uuids
+//
+//                Log.d(TAG, "Device Name: $deviceName")
+//                Log.d(TAG, "MAC Address: $deviceAddress")
+//
+//                if (deviceUuids != null) {
+//                    for (uuid in deviceUuids) {
+//                        Log.d(TAG, "UUID: $uuid")
+//                    }
+//                }
+//                Log.d(TAG, "---------------------------")
+//            }
+//        } else {
+//            Log.d(TAG, "No paired devices found.")
+//        }
+//    }
 }
