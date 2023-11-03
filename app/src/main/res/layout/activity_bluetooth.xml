@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_height="match_parent"
+    android:layout_width="match_parent"
+    tools:context=".clean.presentation.bluetooth.BluetoothActivity">
+
+    <androidx.appcompat.widget.LinearLayoutCompat
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:orientation="horizontal"
+        android:padding="@dimen/_24sdp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/btnBluetooth"
+            android:layout_height="@dimen/_64sdp"
+            android:layout_width="@dimen/_64sdp"
+            app:srcCompat="@drawable/bluetooth" />
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/btnLED"
+            android:layout_height="@dimen/_64sdp"
+            android:layout_marginStart="@dimen/_24sdp"
+            android:layout_width="@dimen/_64sdp"
+            app:srcCompat="@drawable/led" />
+
+    </androidx.appcompat.widget.LinearLayoutCompat>
+
+
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

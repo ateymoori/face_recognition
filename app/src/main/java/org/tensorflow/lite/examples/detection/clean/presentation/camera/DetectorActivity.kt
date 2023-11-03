@@ -1,22 +1,10 @@
-/*
- * Copyright 2019 The TensorFlow Authors. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package org.tensorflow.lite.examples.detection.clean.presentation.camera
 
 import android.Manifest
 import android.app.AlertDialog
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothSocket
 import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
@@ -32,6 +20,7 @@ import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
+import android.util.Log
 import android.util.Size
 import android.util.TypedValue
 import android.view.View
@@ -63,6 +52,7 @@ import org.tensorflow.lite.examples.detection.tflite.SimilarityClassifier.Recogn
 import org.tensorflow.lite.examples.detection.tflite.TFLiteObjectDetectionAPIModel
 import org.tensorflow.lite.examples.detection.tracking.MultiBoxTracker
 import java.io.IOException
+import java.io.OutputStream
 import java.util.*
 
 /**
@@ -120,7 +110,6 @@ open class DetectorActivity : CameraActivity(), OnImageAvailableListener, Recogn
 //        detectedFaceVU = findViewById<View>(R.id.detectedFaceVU) as AppCompatImageView
 //        dataVU = findViewById<View>(R.id.dataVU) as TextView
 
-
         // Real-time contour detection of multiple faces
         val options = FaceDetectorOptions.Builder().setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST)
             .setContourMode(FaceDetectorOptions.LANDMARK_MODE_NONE)
@@ -130,7 +119,6 @@ open class DetectorActivity : CameraActivity(), OnImageAvailableListener, Recogn
 
         init()
         //checkWritePermission();
-
 
         lifecycleScope.launch {
             viewModel._member.collect { it ->
@@ -150,6 +138,8 @@ open class DetectorActivity : CameraActivity(), OnImageAvailableListener, Recogn
                 speak(it?.second_answer)
             }
         }
+
+        initConnection()
 
     }
 
@@ -365,7 +355,6 @@ open class DetectorActivity : CameraActivity(), OnImageAvailableListener, Recogn
         }
         val mappedRecognitions: MutableList<Recognition> = LinkedList()
 
-
         //final List<Classifier.Recognition> results = new ArrayList<>();
 
         // Note this can be done only once
@@ -423,6 +412,38 @@ open class DetectorActivity : CameraActivity(), OnImageAvailableListener, Recogn
                         faceBB.height().toInt()
                     )
                 }
+
+                "left: ${faceBB.left}: ,,, right:  ${faceBB.right}".log("facebb")
+
+                if (faceBB.left.toInt() > 0 && movingType == MovingType.FRONT) {
+                    val leftRight = when {
+                        faceBB.left.toInt() in 100..200 -> {
+                            front()
+                            "Middle"
+                        }
+                        faceBB.left > 200 -> {
+                            right()
+                            "Left"
+                        }
+                        else -> {
+                            left()
+                            "Right"
+                        }
+                    }
+                    runOnUiThread {
+                        views.tvDirection.text = leftRight
+                    }
+                }
+//                val leftRight = if (faceBB.left > 100) {
+//                    "Left"
+//                } else {
+//                    "right"
+//                }
+
+                //left center : L = 190  R : 380
+                //right center : L = 70  R: 250 to right : R ddecreasing
+                //Center = L between 180 to 40
+
                 val startTime = SystemClock.uptimeMillis()
                 val resultsAux = detector!!.recognizeImage(faceBmp, add)
                 lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime
@@ -472,7 +493,6 @@ open class DetectorActivity : CameraActivity(), OnImageAvailableListener, Recogn
                 result.crop = crop
                 mappedRecognitions.add(result)
 
-
 //                mappedRecognitions.forEach {
 //                    it.
 //                    it.toString().log("extra__")
@@ -485,7 +505,6 @@ open class DetectorActivity : CameraActivity(), OnImageAvailableListener, Recogn
 //                    //      result.id.toString().toString().log("extra__")
 //
 //                }
-
 
             }
         }
@@ -523,13 +542,11 @@ open class DetectorActivity : CameraActivity(), OnImageAvailableListener, Recogn
         private const val TEXT_SIZE_DIP = 10f
     }
 
-
     ///////////VOICE
     private lateinit var recognizerIntent: Intent
     private lateinit var speechRecognizer: SpeechRecognizer
     private var lastDetectedVoice = ""
     private var lastPlayedSound: String? = ""
-
 
     fun init() {
         if (ContextCompat.checkSelfPermission(
@@ -639,40 +656,99 @@ open class DetectorActivity : CameraActivity(), OnImageAvailableListener, Recogn
     }
 
     var userWantsToAskSomething = false
+
+    enum class MovingType {
+        BACK, LEFT, RIGHT, FRONT, STOP
+    }
+
+    var movingType: MovingType = MovingType.STOP
     fun detectAndAction(text: String) {
 
         if (text.isEmpty()) return
 
-        if (text.lowercase().contains("hey kitty")) {
-            lastDetectedVoice = ""
-            userWantsToAskSomething = true
-            if(::detectedUser.isInitialized){
-                speak("Hey ${detectedUser.user_name}, What can I do for you?")
+        var command = text.lowercase()
+        command.log("blueeeeee")
+        when {
+            command.contains("hey") -> {
+                lastDetectedVoice = ""
+                userWantsToAskSomething = true
+                if (::detectedUser.isInitialized) {
+                    speak("Hey ${detectedUser.user_name}, What can I do for you?")
+                }
             }
-
-        } else {
-            //handle the question/order
-            "lastPlayedSound : ${lastPlayedSound?.lowercase()}".log("monitor_")
-            "lastDetectedVoice : ${lastDetectedVoice.lowercase()}".log("monitor_")
-            if (userWantsToAskSomething && (lastPlayedSound?.lowercase()?.contains(
-                    lastDetectedVoice.lowercase()
-                ) == false)
-            ) {
-                views.questionTv.text = lastDetectedVoice
-                viewModel.conversation(lastDetectedVoice)
-                userWantsToAskSomething = false
+            command.contains("follow") -> {
+                movingType = MovingType.FRONT
+                front()
+                speak("Ok ${detectedUser.user_name}, I am coming")
+            }
+            command.contains("fr") -> {
+                movingType = MovingType.FRONT
+                front()
+            }
+            command.contains("ba") -> {
+                movingType = MovingType.BACK
+                back()
+            }
+            command.contains("le") -> {
+                movingType = MovingType.LEFT
+                left()
+            }
+            command.contains("st") -> {
+                movingType = MovingType.STOP
+                stop()
+            }
+            command.contains("ri") -> {
+                movingType = MovingType.RIGHT
+                right()
+            }
+            else -> {
+                if (userWantsToAskSomething && (lastPlayedSound?.lowercase()?.contains(
+                        lastDetectedVoice.lowercase()
+                    ) == false)
+                ) {
+                    views.questionTv.text = lastDetectedVoice
+                    viewModel.conversation(lastDetectedVoice)
+                    userWantsToAskSomething = false
+                    speak("Ok ${detectedUser.user_name}, I am moving")
 //                speak("I dont know")
+                }
             }
-
-
         }
+
+//        if (text.lowercase().contains("hey kitty")) {
+//            lastDetectedVoice = ""
+//            userWantsToAskSomething = true
+//            if (::detectedUser.isInitialized) {
+//                speak("Hey ${detectedUser.user_name}, What can I do for you?")
+//            }
+//
+//        } else {
+//            //handle the question/order
+//            "lastPlayedSound : ${lastPlayedSound?.lowercase()}".log("monitor_")
+//            "lastDetectedVoice : ${lastDetectedVoice.lowercase()}".log("monitor_")
+//            if (userWantsToAskSomething && (lastPlayedSound?.lowercase()?.contains(
+//                    lastDetectedVoice.lowercase()
+//                ) == false)
+//            ) {
+//                views.questionTv.text = lastDetectedVoice
+//                viewModel.conversation(lastDetectedVoice)
+//                userWantsToAskSomething = false
+//                speak("Ok ${detectedUser.user_name}, I am moving")
+////                speak("I dont know")
+//            }
+//
+//        }
 
         views.resultsTv.text = text
 
     }
 
+    var lastWord: String? = ""
     fun speak(text: String?) {
+        if (lastWord == text)
+            return
         textToSpeechEngine.speak(text, TextToSpeech.QUEUE_FLUSH, null, "tts1")
+        lastWord = text
 
         textToSpeechEngine.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
             override fun onStart(utteranceId: String?) {
@@ -707,5 +783,127 @@ open class DetectorActivity : CameraActivity(), OnImageAvailableListener, Recogn
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK //necessary if launching from Service
 
         startActivity(intent)
+    }
+
+    private val TAG = "BluetoothExample"
+    private val DEVICE_NAME = "HC-05"
+    private val DEVICE_ADDRESS = "98:D3:61:F6:A6:69"
+    private val PIN_CODE = "1234"
+    private val BT_UUID = UUID.fromString("00001101-0000-1000-8000-00805f9b34fb")
+
+    private lateinit var bluetoothAdapter: BluetoothAdapter
+    private lateinit var bluetoothSocket: BluetoothSocket
+    private lateinit var outputStream: OutputStream
+
+    fun front() {
+        sendBluetoothData("F")
+    }
+
+    fun back() {
+        sendBluetoothData("B")
+    }
+
+    fun left() {
+        sendBluetoothData("L")
+    }
+
+    fun right() {
+        sendBluetoothData("R")
+    }
+
+    fun stop() {
+        sendBluetoothData("S")
+    }
+
+    fun initConnection() {
+
+//        searchDevices()
+
+        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+
+        if (bluetoothAdapter == null) {
+            Log.d(TAG, "Device doesn't support Bluetooth")
+            return
+        }
+
+        val device: BluetoothDevice = bluetoothAdapter.getRemoteDevice(DEVICE_ADDRESS)
+
+        try {
+            bluetoothSocket = device.createRfcommSocketToServiceRecord(BT_UUID)
+            bluetoothSocket.connect()
+
+            // Provide the PIN code
+            device.setPin(PIN_CODE.toByteArray())
+            device.createBond()
+
+            outputStream = bluetoothSocket.outputStream
+            Log.d(TAG, "Bluetooth connection established.")
+
+            // Send your desired text commands here
+//            sendBluetoothData("F")
+
+        } catch (e: IOException) {
+            Log.d(TAG, "Error occurred during Bluetooth connection", e)
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        destroyConnection()
+    }
+
+    fun destroyConnection() {
+        try {
+            outputStream.close()
+            bluetoothSocket.close()
+        } catch (e: IOException) {
+            Log.e("blueeeeee", "Error occurred while closing Bluetooth connection", e)
+        }
+    }
+
+    private fun sendBluetoothData(data: String) {
+        if (::outputStream.isInitialized)
+            try {
+                outputStream.write(data.toByteArray())
+                Log.d("blueeeeee", "Data sent: $data")
+            } catch (e: IOException) {
+                Log.d("blueeeeee", "Error occurred while sending data", e)
+            }
+    }
+
+    fun searchDevices() {
+        val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
+
+        if (bluetoothAdapter == null) {
+            Log.d(TAG, "Device doesn't support Bluetooth")
+            return
+        }
+
+        if (!bluetoothAdapter.isEnabled) {
+            Log.d(TAG, "Bluetooth is not enabled. Please enable Bluetooth and try again.")
+            return
+        }
+
+        val pairedDevices: Set<BluetoothDevice>? = bluetoothAdapter.bondedDevices
+
+        if (pairedDevices != null && pairedDevices.isNotEmpty()) {
+            for (device: BluetoothDevice in pairedDevices) {
+                val deviceName = device.name
+                val deviceAddress = device.address
+                val deviceUuids = device.uuids
+
+                Log.d(TAG, "Device Name: $deviceName")
+                Log.d(TAG, "MAC Address: $deviceAddress")
+
+                if (deviceUuids != null) {
+                    for (uuid in deviceUuids) {
+                        Log.d(TAG, "UUID: $uuid")
+                    }
+                }
+                Log.d(TAG, "---------------------------")
+            }
+        } else {
+            Log.d(TAG, "No paired devices found.")
+        }
     }
 }

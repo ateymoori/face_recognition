@@ -21,7 +21,7 @@ import kotlin.math.round
 
 fun String.log(tag: String? = null): String {
     if (tag != null)
-        Log.d(this, tag)
+        Log.d(tag, this)
     else
         Log.d("debug_", this)
     return this
