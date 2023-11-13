@@ -10,7 +10,6 @@ import kotlinx.coroutines.launch
 import org.tensorflow.lite.examples.detection.clean.data.models.ConversationModel
 import org.tensorflow.lite.examples.detection.clean.data.models.MemberModel
 import org.tensorflow.lite.examples.detection.clean.data.utils.Resource
-import org.tensorflow.lite.examples.detection.clean.data.utils.log
 import org.tensorflow.lite.examples.detection.clean.data.utils.onError
 import org.tensorflow.lite.examples.detection.clean.data.utils.onSuccess
 import org.tensorflow.lite.examples.detection.clean.domain.repositories.InMemoryMembersRepository
@@ -34,14 +33,12 @@ class CameraViewModel @Inject constructor(
         viewModelScope.launch {
             inMemoryMembersRepository.getMember
                 .collect {
-                    "${it.toString()}".log("debug_face inMemoryMembersRepository.getMember")
                     _member.value = it
                 }
         }
     }
 
     fun syncUser(memberModel: MemberModel) {
-        "${memberModel.toString()}".log("debug_face memberModel")
         viewModelScope.launch {
             syncState.postValue(Resource.Loading())
             syncState.postValue(addSyncMember.invoke(memberModel))
@@ -49,7 +46,6 @@ class CameraViewModel @Inject constructor(
     }
 
     fun faceDetected(memberName: String, faceBmp: Bitmap?) {
-        "${memberName.toString()}".log("debug_face faceDetected")
         viewModelScope.launch {
             inMemoryMembersRepository.setMember(memberName , faceBmp)
         }
@@ -60,7 +56,6 @@ class CameraViewModel @Inject constructor(
             startConversation.invoke(question).onSuccess {
                 _conversation.value = it
             }.onError {
-
             }
         }
     }

@@ -83,10 +83,6 @@ abstract class CameraActivity : AppCompatActivity(), OnImageAvailableListener, P
             requestPermission()
         }
         views.fabSwitchcam.setOnClickListener { onSwitchCamClick() }
-//        views.fabVoice.setOnClickListener {
-//
-//            startActivity(Intent(this, VoiceActivity::class.java))
-//        }
     }
 
     private fun onSwitchCamClick() {
@@ -159,51 +155,53 @@ abstract class CameraActivity : AppCompatActivity(), OnImageAvailableListener, P
     /** Callback for Camera2 API  */
     override fun onImageAvailable(reader: ImageReader) {
         // We need wait until we have some size from onPreviewSizeChosen
-        if (previewWidth == 0 || previewHeight == 0) {
-            return
-        }
-        if (rgbBytes == null) {
-            rgbBytes = IntArray(previewWidth * previewHeight)
-        }
+        if (previewWidth == 0 || previewHeight == 0) return
+
+        rgbBytes = rgbBytes ?: IntArray(previewWidth * previewHeight)
+
         try {
             val image = reader.acquireLatestImage() ?: return
+
             if (isProcessingFrame) {
                 image.close()
                 return
             }
+
             isProcessingFrame = true
             Trace.beginSection("imageAvailable")
+
             val planes = image.planes
             fillBytes(planes, yuvBytes)
             luminanceStride = planes[0].rowStride
             val uvRowStride = planes[1].rowStride
             val uvPixelStride = planes[1].pixelStride
-            imageConverter = object : Runnable {
-                override fun run() {
-                    ImageUtils.convertYUV420ToARGB8888(
-                        yuvBytes[0],
-                        yuvBytes[1],
-                        yuvBytes[2],
-                        previewWidth,
-                        previewHeight,
-                        luminanceStride,
-                        uvRowStride,
-                        uvPixelStride,
-                        rgbBytes
-                    )
-                }
+
+            imageConverter = Runnable {
+                ImageUtils.convertYUV420ToARGB8888(
+                    yuvBytes[0],
+                    yuvBytes[1],
+                    yuvBytes[2],
+                    previewWidth,
+                    previewHeight,
+                    luminanceStride,
+                    uvRowStride,
+                    uvPixelStride,
+                    rgbBytes
+                )
             }
+
             postInferenceCallback = Runnable {
                 image.close()
                 isProcessingFrame = false
             }
+
             processImage()
         } catch (e: Exception) {
-            LOGGER.e(e, "Exception!")
-            Trace.endSection()
+            LOGGER.e(e, "Exception during image processing")
             return
+        } finally {
+            Trace.endSection()
         }
-        Trace.endSection()
     }
 
     @Synchronized

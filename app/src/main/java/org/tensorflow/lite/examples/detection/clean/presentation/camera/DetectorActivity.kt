@@ -75,7 +75,6 @@ open class DetectorActivity : CameraActivity(), OnImageAvailableListener, Recogn
     private var computingDetection = false
     private var addPending = false
 
-    //private boolean adding = false;
     private var timestamp: Long = 0
     private var frameToCropTransform: Matrix? = null
     private var cropToFrameTransform: Matrix? = null
@@ -93,10 +92,6 @@ open class DetectorActivity : CameraActivity(), OnImageAvailableListener, Recogn
     // here the face is cropped and drawn
     private var faceBmp: Bitmap? = null
 
-//    private var detectedFaceVU: AppCompatImageView? = null
-//    private var dataVU: TextView? = null
-
-    //private HashMap<String, Classifier.Recognition> knownFaces = new HashMap<>();
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         findViewById<View>(R.id.fab_add).setOnClickListener(View.OnClickListener { onAddClick() })
@@ -104,12 +99,7 @@ open class DetectorActivity : CameraActivity(), OnImageAvailableListener, Recogn
 
         views.fabVoice.setOnClickListener {
             viewModel.conversation("Who is Sweden prime minister?")
-            //   startActivity(Intent(this, VoiceActivity::class.java))
         }
-
-//        detectedFaceVU = findViewById<View>(R.id.detectedFaceVU) as AppCompatImageView
-//        dataVU = findViewById<View>(R.id.dataVU) as TextView
-
         // Real-time contour detection of multiple faces
         val options = FaceDetectorOptions.Builder().setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST)
             .setContourMode(FaceDetectorOptions.LANDMARK_MODE_NONE)
@@ -118,7 +108,6 @@ open class DetectorActivity : CameraActivity(), OnImageAvailableListener, Recogn
         faceDetector = detector
 
         init()
-        //checkWritePermission();
 
         lifecycleScope.launch {
             viewModel._member.collect { it ->
@@ -252,7 +241,6 @@ open class DetectorActivity : CameraActivity(), OnImageAvailableListener, Recogn
         get() = Size(640, 480)
 
     // Which detection model to use: by default uses Tensorflow Object Detection API frozen
-    // checkpoints.
     private enum class DetectorMode {
         TF_OD_API
     }
@@ -265,7 +253,6 @@ open class DetectorActivity : CameraActivity(), OnImageAvailableListener, Recogn
         runInBackground { detector!!.setNumThreads(numThreads) }
     }
 
-    // Face Processing
     private fun createTransform(
         srcWidth: Int, srcHeight: Int, dstWidth: Int, dstHeight: Int, applyRotation: Int
     ): Matrix {
@@ -275,21 +262,10 @@ open class DetectorActivity : CameraActivity(), OnImageAvailableListener, Recogn
                 LOGGER.w("Rotation of %d % 90 != 0", applyRotation)
             }
 
-            // Translate so center of image is at origin.
             matrix.postTranslate(-srcWidth / 2.0f, -srcHeight / 2.0f)
-
-            // Rotate around origin.
             matrix.postRotate(applyRotation.toFloat())
         }
-
-//        // Account for the already applied rotation, if any, and then determine how
-//        // much scaling is needed for each axis.
-//        final boolean transpose = (Math.abs(applyRotation) + 90) % 180 == 0;
-//        final int inWidth = transpose ? srcHeight : srcWidth;
-//        final int inHeight = transpose ? srcWidth : srcHeight;
         if (applyRotation != 0) {
-
-            // Translate back from origin centered reference to destination frame.
             matrix.postTranslate(dstWidth / 2.0f, dstHeight / 2.0f)
         }
         return matrix
@@ -412,52 +388,16 @@ open class DetectorActivity : CameraActivity(), OnImageAvailableListener, Recogn
                         faceBB.height().toInt()
                     )
                 }
-
-                "left: ${faceBB.left}: ,,, right:  ${faceBB.right}".log("facebb")
-
-//                if (faceBB.left.toInt() > 0 && movingType == MovingType.FRONT) {
-//                    val leftRight = when {
-//                        faceBB.left.toInt() in 100..200 -> {
-//                            front()
-//                            "Middle"
-//                        }
-//                        faceBB.left > 200 -> {
-//                            right()
-//                            "Left"
-//                        }
-//                        else -> {
-//                            left()
-//                            "Right"
-//                        }
-//                    }
-//                    runOnUiThread {
-//                        views.tvDirection.text = leftRight
-//                    }
-//                }
-//                val leftRight = if (faceBB.left > 100) {
-//                    "Left"
-//                } else {
-//                    "right"
-//                }
-
-                //left center : L = 190  R : 380
-                //right center : L = 70  R: 250 to right : R ddecreasing
-                //Center = L between 180 to 40
-
                 val startTime = SystemClock.uptimeMillis()
                 val resultsAux = detector!!.recognizeImage(faceBmp, add)
                 lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime
                 if (resultsAux!!.size > 0) {
                     val result = resultsAux[0]
                     extra = result!!.extra
-                    //          Object extra = result.getExtra();
-//          if (extra != null) {
-//            LOGGER.i("embeeding retrieved " + extra.toString());
-//          }
                     val conf = result.distance!!
                     if (conf < 1.0f) {
                         confidence = conf
-                        label = result.title ?: "titlee"
+                        label = result.title ?: "title"
 
                         label.log("face_detected 1")
                         viewModel.faceDetected(
@@ -492,37 +432,13 @@ open class DetectorActivity : CameraActivity(), OnImageAvailableListener, Recogn
                 result.extra = extra
                 result.crop = crop
                 mappedRecognitions.add(result)
-
-//                mappedRecognitions.forEach {
-//                    it.
-//                    it.toString().log("extra__")
-//                }
-//                runOnUiThread {
-//                    detectedFaceVU?.setImageBitmap(faceBmp)
-//                    dataVU?.text = label
-//
-//                    //    face.smilingProbability
-//                    //      result.id.toString().toString().log("extra__")
-//
-//                }
-
             }
         }
-
-        //    if (saved) {
-//      lastSaved = System.currentTimeMillis();
-//    }
         updateResults(currTimestamp, mappedRecognitions)
     }
 
     companion object {
         private val LOGGER = Logger()
-
-        // FaceNet
-        //  private static final int TF_OD_API_INPUT_SIZE = 160;
-        //  private static final boolean TF_OD_API_IS_QUANTIZED = false;
-        //  private static final String TF_OD_API_MODEL_FILE = "facenet.tflite";
-        //  //private static final String TF_OD_API_MODEL_FILE = "facenet_hiroki.tflite";
         // MobileFaceNet
         private const val TF_OD_API_INPUT_SIZE = 112
         private const val TF_OD_API_IS_QUANTIZED = false
@@ -535,20 +451,17 @@ open class DetectorActivity : CameraActivity(), OnImageAvailableListener, Recogn
         private const val MAINTAIN_ASPECT = false
         protected val desiredPreviewFrameSize = Size(640, 480)
         //   protected get() = {  }
-
-        //private static final int CROP_SIZE = 320;
-        //private static final Size CROP_SIZE = new Size(320, 320);
         private const val SAVE_PREVIEW_BITMAP = false
         private const val TEXT_SIZE_DIP = 10f
     }
 
-    ///////////VOICE
+    //VOICE
     private lateinit var recognizerIntent: Intent
     private lateinit var speechRecognizer: SpeechRecognizer
     private var lastDetectedVoice = ""
     private var lastPlayedSound: String? = ""
 
-    fun init() {
+    private fun init() {
         if (ContextCompat.checkSelfPermission(
                 this, Manifest.permission.RECORD_AUDIO
             ) != PackageManager.PERMISSION_GRANTED
@@ -579,7 +492,6 @@ open class DetectorActivity : CameraActivity(), OnImageAvailableListener, Recogn
     }
 
     fun startListening() {
-        // if (!::recognizerIntent.isInitialized) {
         recognizerIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_WEB_SEARCH)
             putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, packageName)
@@ -655,255 +567,4 @@ open class DetectorActivity : CameraActivity(), OnImageAvailableListener, Recogn
         amanager.setStreamMute(AudioManager.STREAM_SYSTEM, false)
     }
 
-    var userWantsToAskSomething = false
-
-//    enum class MovingType {
-//        BACK, LEFT, RIGHT, FRONT, STOP
-//    }
-//
-//    var movingType: MovingType = MovingType.STOP
-//    fun detectAndAction(text: String) {
-//
-//        if (text.isEmpty()) return
-//
-//        var command = text.lowercase()
-//        command.log("blueeeeee")
-//        when {
-//            command.contains("hey") -> {
-//                lastDetectedVoice = ""
-//                userWantsToAskSomething = true
-//                if (::detectedUser.isInitialized) {
-//                    speak("Hey ${detectedUser.user_name}, What can I do for you?")
-//                }
-//            }
-//            command.contains("follow") -> {
-//                movingType = MovingType.FRONT
-//                front()
-//                speak("Ok ${detectedUser.user_name}, I am coming")
-//            }
-//            command.contains("fr") -> {
-//                movingType = MovingType.FRONT
-//                front()
-//            }
-//            command.contains("ba") -> {
-//                movingType = MovingType.BACK
-//                back()
-//            }
-//            command.contains("le") -> {
-//                movingType = MovingType.LEFT
-//                left()
-//            }
-//            command.contains("st") -> {
-//                movingType = MovingType.STOP
-//                stop()
-//            }
-//            command.contains("ri") -> {
-//                movingType = MovingType.RIGHT
-//                right()
-//            }
-//            else -> {
-//                if (userWantsToAskSomething && (lastPlayedSound?.lowercase()?.contains(
-//                        lastDetectedVoice.lowercase()
-//                    ) == false)
-//                ) {
-//                    views.questionTv.text = lastDetectedVoice
-//                    viewModel.conversation(lastDetectedVoice)
-//                    userWantsToAskSomething = false
-//                    speak("Ok ${detectedUser.user_name}, I am moving")
-////                speak("I dont know")
-//                }
-//            }
-//        }
-
-//        if (text.lowercase().contains("hey kitty")) {
-//            lastDetectedVoice = ""
-//            userWantsToAskSomething = true
-//            if (::detectedUser.isInitialized) {
-//                speak("Hey ${detectedUser.user_name}, What can I do for you?")
-//            }
-//
-//        } else {
-//            //handle the question/order
-//            "lastPlayedSound : ${lastPlayedSound?.lowercase()}".log("monitor_")
-//            "lastDetectedVoice : ${lastDetectedVoice.lowercase()}".log("monitor_")
-//            if (userWantsToAskSomething && (lastPlayedSound?.lowercase()?.contains(
-//                    lastDetectedVoice.lowercase()
-//                ) == false)
-//            ) {
-//                views.questionTv.text = lastDetectedVoice
-//                viewModel.conversation(lastDetectedVoice)
-//                userWantsToAskSomething = false
-//                speak("Ok ${detectedUser.user_name}, I am moving")
-////                speak("I dont know")
-//            }
-//
-//        }
-
-   //     views.resultsTv.text = text
-
-   // }
-
-    var lastWord: String? = ""
-//    fun speak(text: String?) {
-//        if (lastWord == text)
-//            return
-//        textToSpeechEngine.speak(text, TextToSpeech.QUEUE_FLUSH, null, "tts1")
-//        lastWord = text
-//
-//        textToSpeechEngine.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-//            override fun onStart(utteranceId: String?) {
-//                lastPlayedSound = text
-//                "onStart $text  ".log("speak_")
-//                unMuteAudio()
-//                stopListening()
-//            }
-//
-//            override fun onDone(utteranceId: String?) {
-//                "onDone".log("speak_")
-//                muteAudio()
-//                startListening()
-//            }
-//
-//            override fun onError(utteranceId: String?) {
-//                "onError".log("speak_")
-//                muteAudio()
-//                startListening()
-//            }
-//        })
-//    }
-//
-//    fun sendCommandToGoogleAssistant(command: String) {
-//        val command = "navigate home by public transport"
-//        val intent = Intent(Intent.ACTION_WEB_SEARCH)
-//        intent.setClassName(
-//            "com.google.android.googlequicksearchbox",
-//            "com.google.android.googlequicksearchbox.SearchActivity"
-//        )
-//        intent.putExtra(command, command)
-//        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK //necessary if launching from Service
-//
-//        startActivity(intent)
-//    }
-//
-//    private val TAG = "BluetoothExample"
-//    private val DEVICE_NAME = "HC-05"
-//    private val DEVICE_ADDRESS = "98:D3:61:F6:A6:69"
-//    private val PIN_CODE = "1234"
-//    private val BT_UUID = UUID.fromString("00001101-0000-1000-8000-00805f9b34fb")
-//
-//    private lateinit var bluetoothAdapter: BluetoothAdapter
-//    private lateinit var bluetoothSocket: BluetoothSocket
-//    private lateinit var outputStream: OutputStream
-//
-//    fun front() {
-//        sendBluetoothData("F")
-//    }
-//
-//    fun back() {
-//        sendBluetoothData("B")
-//    }
-//
-//    fun left() {
-//        sendBluetoothData("L")
-//    }
-//
-//    fun right() {
-//        sendBluetoothData("R")
-//    }
-//
-//    fun stop() {
-//        sendBluetoothData("S")
-//    }
-//
-//    fun initConnection() {
-//
-////        searchDevices()
-//
-//        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-//
-//        if (bluetoothAdapter == null) {
-//            Log.d(TAG, "Device doesn't support Bluetooth")
-//            return
-//        }
-//
-//        val device: BluetoothDevice = bluetoothAdapter.getRemoteDevice(DEVICE_ADDRESS)
-//
-//        try {
-//            bluetoothSocket = device.createRfcommSocketToServiceRecord(BT_UUID)
-//            bluetoothSocket.connect()
-//
-//            // Provide the PIN code
-//            device.setPin(PIN_CODE.toByteArray())
-//            device.createBond()
-//
-//            outputStream = bluetoothSocket.outputStream
-//            Log.d(TAG, "Bluetooth connection established.")
-//
-//            // Send your desired text commands here
-////            sendBluetoothData("F")
-//
-//        } catch (e: IOException) {
-//            Log.d(TAG, "Error occurred during Bluetooth connection", e)
-//        }
-//    }
-//
-//    override fun onDestroy() {
-//        super.onDestroy()
-//        destroyConnection()
-//    }
-//
-//    fun destroyConnection() {
-//        try {
-//            outputStream.close()
-//            bluetoothSocket.close()
-//        } catch (e: IOException) {
-//            Log.e("blueeeeee", "Error occurred while closing Bluetooth connection", e)
-//        }
-//    }
-//
-//    private fun sendBluetoothData(data: String) {
-//        if (::outputStream.isInitialized)
-//            try {
-//                outputStream.write(data.toByteArray())
-//                Log.d("blueeeeee", "Data sent: $data")
-//            } catch (e: IOException) {
-//                Log.d("blueeeeee", "Error occurred while sending data", e)
-//            }
-//    }
-//
-//    fun searchDevices() {
-//        val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
-//
-//        if (bluetoothAdapter == null) {
-//            Log.d(TAG, "Device doesn't support Bluetooth")
-//            return
-//        }
-//
-//        if (!bluetoothAdapter.isEnabled) {
-//            Log.d(TAG, "Bluetooth is not enabled. Please enable Bluetooth and try again.")
-//            return
-//        }
-//
-//        val pairedDevices: Set<BluetoothDevice>? = bluetoothAdapter.bondedDevices
-//
-//        if (pairedDevices != null && pairedDevices.isNotEmpty()) {
-//            for (device: BluetoothDevice in pairedDevices) {
-//                val deviceName = device.name
-//                val deviceAddress = device.address
-//                val deviceUuids = device.uuids
-//
-//                Log.d(TAG, "Device Name: $deviceName")
-//                Log.d(TAG, "MAC Address: $deviceAddress")
-//
-//                if (deviceUuids != null) {
-//                    for (uuid in deviceUuids) {
-//                        Log.d(TAG, "UUID: $uuid")
-//                    }
-//                }
-//                Log.d(TAG, "---------------------------")
-//            }
-//        } else {
-//            Log.d(TAG, "No paired devices found.")
-//        }
-//    }
 }
